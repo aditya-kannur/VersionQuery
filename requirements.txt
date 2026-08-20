@@ -1,0 +1,8 @@
+chromadb
+rank_bm25
+sentence-transformers
+langgraph
+fastapi
+uvicorn
+streamlit
+python-dotenv
