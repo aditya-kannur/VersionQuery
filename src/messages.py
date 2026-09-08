@@ -1,9 +1,8 @@
-# Static developer-facing message strings, shared across the pipeline so
-# every module returns the exact same wording rather than each rewriting it.
+"""
+Static user-facing message strings.
+Used by src/router.py.
+"""
 
-CLARIFICATION_QUESTION = (
-    "Which API version are you using? (e.g. 2022-06-28) "
-    "This question depends on the version, and I don't want to guess."
-)
+CLARIFICATION_QUESTION = "Which API version are you using? (e.g. 2022-06-28)"
 
 NOT_FOUND_MESSAGE = "Not found in docs for this version."
