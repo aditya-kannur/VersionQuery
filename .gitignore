@@ -4,4 +4,4 @@ __pycache__/
 venv/
 .venv/
 data/*.tmp
-data/chroma/
+data/chroma_store/
