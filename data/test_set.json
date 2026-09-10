@@ -1,0 +1,188 @@
+[
+  {
+    "id": "eval-01",
+    "type": "reference",
+    "question": "How do I query a database in Notion-Version 2022-06-28?",
+    "version": "2022-06-28",
+    "expected_doc_type": "reference",
+    "expected_source": "N/A - no reference exists for this version, expect Not found",
+    "expected_not_found": true
+  },
+  {
+    "id": "eval-02",
+    "type": "reference",
+    "question": "How do I query a data source in Notion-Version 2026-03-11?",
+    "version": "2026-03-11",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Query a data source",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-03",
+    "type": "reference",
+    "question": "How do I retrieve a database in Notion-Version 2025-09-03?",
+    "version": "2025-09-03",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Retrieve a database",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-04",
+    "type": "diagnostic",
+    "question": "Why is my database query returning empty property values when it worked yesterday?",
+    "version": "2022-06-28",
+    "expected_doc_type": "changelog",
+    "expected_source": "Changelog - Releasing Notion-Version 2022-06-28",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-05",
+    "type": "diagnostic",
+    "question": "Why did my API request start failing with a missing_version error?",
+    "version": "2021-05-13",
+    "expected_doc_type": "changelog",
+    "expected_source": "Migration guide 2021-05-13",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-06",
+    "type": "migration",
+    "question": "How do I upgrade from 2021-08-16 to 2022-06-28?",
+    "from_version": "2021-08-16",
+    "to_version": "2022-06-28",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide - two hops via 2022-02-22",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-07",
+    "type": "migration",
+    "question": "What changed migrating from 2022-06-28 to 2025-09-03?",
+    "from_version": "2022-06-28",
+    "to_version": "2025-09-03",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide 2025-09-03",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-08",
+    "type": "migration",
+    "question": "What changed migrating from 2025-09-03 to 2026-03-11?",
+    "from_version": "2025-09-03",
+    "to_version": "2026-03-11",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide 2026-03-11",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-09",
+    "type": "reference",
+    "question": "What does the retrieve a page property item endpoint return in Notion-Version 2025-09-03?",
+    "version": "2025-09-03",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Retrieve a page property item",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-10",
+    "type": "missing_version",
+    "question": "How do I query a database?",
+    "version": null,
+    "expected_doc_type": "reference",
+    "expected_source": "N/A - expect clarification question, not an answer",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-11",
+    "type": "not_found",
+    "question": "How do I configure webhook retry backoff in Notion-Version 2021-05-13?",
+    "version": "2021-05-13",
+    "expected_doc_type": "reference",
+    "expected_source": "N/A - not documented for this version, expect Not found",
+    "expected_not_found": true
+  },
+  {
+    "id": "eval-12",
+    "type": "reference",
+    "question": "What HTTP method and path does the update page endpoint use in Notion-Version 2026-03-11?",
+    "version": "2026-03-11",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Update page",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-13",
+    "type": "diagnostic",
+    "question": "Why does the text property in content blocks no longer work in Notion-Version 2022-02-22?",
+    "version": "2022-02-22",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide 2022-02-22 - text renamed to rich_text",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-14",
+    "type": "reference",
+    "question": "How do I retrieve your token's bot user in Notion-Version 2025-09-03?",
+    "version": "2025-09-03",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Retrieve your token's bot user",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-15",
+    "type": "migration",
+    "question": "How do I upgrade from 2021-05-13 to 2021-08-16?",
+    "from_version": "2021-05-13",
+    "to_version": "2021-08-16",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide 2021-08-16",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-16",
+    "type": "migration",
+    "question": "How do I upgrade from 2021-05-13 all the way to 2026-03-11?",
+    "from_version": "2021-05-13",
+    "to_version": "2026-03-11",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide - five hops",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-17",
+    "type": "diagnostic",
+    "question": "Why do query database filters no longer accept a text filter type in Notion-Version 2022-02-22?",
+    "version": "2022-02-22",
+    "expected_doc_type": "migration",
+    "expected_source": "Upgrade Guide 2022-02-22 - query database filter changes",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-18",
+    "type": "reference",
+    "question": "How do I create a page in Notion-Version 2026-03-11?",
+    "version": "2026-03-11",
+    "expected_doc_type": "reference",
+    "expected_source": "Notion API Reference - Create a page",
+    "expected_not_found": false
+  },
+  {
+    "id": "eval-19",
+    "type": "migration",
+    "question": "Is 2020-01-01 a valid API version to migrate from?",
+    "from_version": "2020-01-01",
+    "to_version": "2022-06-28",
+    "expected_doc_type": "migration",
+    "expected_source": "N/A - unknown version, expect Not found",
+    "expected_not_found": true
+  },
+  {
+    "id": "eval-20",
+    "type": "not_found",
+    "question": "How do I set up two-factor authentication for my Notion integration in Notion-Version 2022-06-28?",
+    "version": "2022-06-28",
+    "expected_doc_type": "reference",
+    "expected_source": "N/A - not documented, expect Not found",
+    "expected_not_found": true
+  }
+]
