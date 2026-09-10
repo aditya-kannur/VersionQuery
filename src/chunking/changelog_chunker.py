@@ -1,3 +1,4 @@
+import json
 import re
 
 # Matches <Update label="...">...</Update> blocks, across multiple lines.
@@ -9,8 +10,11 @@ UPDATE_PATTERN = re.compile(
 )
 
 # Matches a '###' header line. Same shape as Day 2's '##' pattern,
-# but one level deeper. ^\s* allows leading whitespace before the header.
-SUBHEADER_SPLIT_PATTERN = re.compile(r'^###\s+(.+)$', re.MULTILINE)
+# but one level deeper. The headers are indented (they sit inside the
+# <Update> block), so ^\s* actually allows that leading whitespace —
+# without it the pattern never matches and every release becomes one
+# giant unsplit chunk.
+SUBHEADER_SPLIT_PATTERN = re.compile(r'^\s*###\s+(.+)$', re.MULTILINE)
 
 
 def split_by_subheader(body: str):
@@ -42,6 +46,11 @@ def chunk_changelog(text: str, doc_type: str = "changelog"):
     doc_type is passed in by the caller so both files can reuse this
     function but still tag their chunks correctly if you ever need to
     tell them apart later.
+
+    Returns a flat list of dicts — doc_type, release_date and text all at
+    the top level, matching the shape chunk_migration_file() and
+    chunk_reference_file() return, so retrieval_pipeline.load_all_chunks()
+    can treat every chunk uniformly regardless of which chunker produced it.
     """
     chunks = []
 
@@ -59,11 +68,21 @@ def chunk_changelog(text: str, doc_type: str = "changelog"):
                 chunk_text = f"{section_title}\n\n{section_text}"
 
             chunks.append({
+                "doc_type": doc_type,
+                "release_date": release_date,
+                "section": section_title,
                 "text": chunk_text,
-                "metadata": {
-                    "doc_type": doc_type,
-                    "release_date": release_date,
-                }
             })
 
     return chunks
+
+
+if __name__ == "__main__":
+    all_chunks = []
+    for filename in ("data/changelog/changelog.md", "data/changelog/historical-changelog.md"):
+        with open(filename, "r", encoding="utf-8") as f:
+            all_chunks.extend(chunk_changelog(f.read(), doc_type="changelog"))
+
+    print(f"Produced {len(all_chunks)} chunks from 2 changelog files")
+    with open("data/chunks_changelog.json", "w", encoding="utf-8") as f:
+        json.dump(all_chunks, f, indent=2, ensure_ascii=False)

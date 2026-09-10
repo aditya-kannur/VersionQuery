@@ -7,7 +7,11 @@
       "Users"
     ],
     "summary": "Retrieve your token's bot user",
-    "text": "GET /v1/users/me \u2014 Retrieve your token's bot user."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/users/me - Retrieve your token's bot user."
   },
   {
     "doc_type": "reference",
@@ -17,7 +21,11 @@
       "Users"
     ],
     "summary": "Retrieve a user",
-    "text": "GET /v1/users/{user_id} \u2014 Retrieve a user. Parameters: user_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/users/{user_id} - Retrieve a user. Parameters: user_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -27,7 +35,11 @@
       "Users"
     ],
     "summary": "List all users",
-    "text": "GET /v1/users \u2014 List all users. Parameters: start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/users - List all users. Parameters: start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -37,7 +49,11 @@
       "Pages"
     ],
     "summary": "Create a page",
-    "text": "POST /v1/pages \u2014 Create a page. Parameters: filter_properties. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/pages - Create a page. Parameters: filter_properties [query]. Request body fields: parent, properties, icon, cover, content, children, markdown, allow_async, template, position."
   },
   {
     "doc_type": "reference",
@@ -47,7 +63,11 @@
       "Pages"
     ],
     "summary": "Retrieve a page",
-    "text": "GET /v1/pages/{page_id} \u2014 Retrieve a page. Parameters: page_id, filter_properties."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/pages/{page_id} - Retrieve a page. Parameters: page_id [path] (required), filter_properties [query]."
   },
   {
     "doc_type": "reference",
@@ -57,7 +77,11 @@
       "Pages"
     ],
     "summary": "Update page",
-    "text": "PATCH /v1/pages/{page_id} \u2014 Update page. Parameters: page_id, filter_properties. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/pages/{page_id} - Update page. Parameters: page_id [path] (required), filter_properties [query]. Request body fields: properties, icon, cover, is_locked, template, erase_content, in_trash, is_archived."
   },
   {
     "doc_type": "reference",
@@ -67,7 +91,11 @@
       "Pages"
     ],
     "summary": "Move a page",
-    "text": "POST /v1/pages/{page_id}/move \u2014 Move a page. Parameters: page_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/pages/{page_id}/move - Move a page. Parameters: page_id [path] (required). Request body fields: parent."
   },
   {
     "doc_type": "reference",
@@ -77,7 +105,11 @@
       "Pages"
     ],
     "summary": "Retrieve a page property item",
-    "text": "GET /v1/pages/{page_id}/properties/{property_id} \u2014 Retrieve a page property item. Parameters: page_id, property_id, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/pages/{page_id}/properties/{property_id} - Retrieve a page property item. Parameters: page_id [path] (required), property_id [path] (required), start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -87,7 +119,11 @@
       "Pages"
     ],
     "summary": "Retrieve a page as markdown",
-    "text": "GET /v1/pages/{page_id}/markdown \u2014 Retrieve a page as markdown. Parameters: page_id, include_transcript."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/pages/{page_id}/markdown - Retrieve a page as markdown. Parameters: page_id [path] (required), include_transcript [query]."
   },
   {
     "doc_type": "reference",
@@ -97,7 +133,11 @@
       "Pages"
     ],
     "summary": "Update a page's content as markdown",
-    "text": "PATCH /v1/pages/{page_id}/markdown \u2014 Update a page's content as markdown. Parameters: page_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/pages/{page_id}/markdown - Update a page's content as markdown. Parameters: page_id [path] (required). Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -107,7 +147,11 @@
       "Async tasks"
     ],
     "summary": "Retrieve an async task",
-    "text": "GET /v1/async_tasks/{task_id} \u2014 Retrieve an async task. Parameters: task_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/async_tasks/{task_id} - Retrieve an async task. Parameters: task_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -117,7 +161,11 @@
       "Blocks"
     ],
     "summary": "Retrieve a block",
-    "text": "GET /v1/blocks/{block_id} \u2014 Retrieve a block. Parameters: block_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/blocks/{block_id} - Retrieve a block. Parameters: block_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -127,7 +175,11 @@
       "Blocks"
     ],
     "summary": "Update a block",
-    "text": "PATCH /v1/blocks/{block_id} \u2014 Update a block. Parameters: block_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/blocks/{block_id} - Update a block. Parameters: block_id [path] (required). Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -137,7 +189,11 @@
       "Blocks"
     ],
     "summary": "Delete a block",
-    "text": "DELETE /v1/blocks/{block_id} \u2014 Delete a block. Parameters: block_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "DELETE /v1/blocks/{block_id} - Delete a block. Parameters: block_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -147,7 +203,11 @@
       "Blocks"
     ],
     "summary": "Retrieve block children",
-    "text": "GET /v1/blocks/{block_id}/children \u2014 Retrieve block children. Parameters: block_id, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/blocks/{block_id}/children - Retrieve block children. Parameters: block_id [path] (required), start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -157,7 +217,11 @@
       "Blocks"
     ],
     "summary": "Append block children",
-    "text": "PATCH /v1/blocks/{block_id}/children \u2014 Append block children. Parameters: block_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/blocks/{block_id}/children - Append block children. Parameters: block_id [path] (required). Request body fields: children, position."
   },
   {
     "doc_type": "reference",
@@ -167,7 +231,11 @@
       "Data sources"
     ],
     "summary": "Retrieve a data source",
-    "text": "GET /v1/data_sources/{data_source_id} \u2014 Retrieve a data source. Parameters: data_source_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/data_sources/{data_source_id} - Retrieve a data source. Parameters: data_source_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -177,7 +245,11 @@
       "Data sources"
     ],
     "summary": "Update a data source",
-    "text": "PATCH /v1/data_sources/{data_source_id} \u2014 Update a data source. Parameters: data_source_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/data_sources/{data_source_id} - Update a data source. Parameters: data_source_id [path] (required). Request body fields: title, icon, properties, in_trash, parent."
   },
   {
     "doc_type": "reference",
@@ -187,7 +259,11 @@
       "Data sources"
     ],
     "summary": "Query a data source",
-    "text": "POST /v1/data_sources/{data_source_id}/query \u2014 Query a data source. Parameters: data_source_id, filter_properties. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/data_sources/{data_source_id}/query - Query a data source. Parameters: data_source_id [path] (required), filter_properties [query]. Request body fields: sorts, filter, start_cursor, page_size, is_archived, result_type."
   },
   {
     "doc_type": "reference",
@@ -197,7 +273,11 @@
       "Data sources"
     ],
     "summary": "Create a data source",
-    "text": "POST /v1/data_sources \u2014 Create a data source. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/data_sources - Create a data source. Request body fields: parent, properties, title, icon."
   },
   {
     "doc_type": "reference",
@@ -207,7 +287,11 @@
       "Data sources"
     ],
     "summary": "List templates in a data source",
-    "text": "GET /v1/data_sources/{data_source_id}/templates \u2014 List templates in a data source. Parameters: data_source_id, name, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/data_sources/{data_source_id}/templates - List templates in a data source. Parameters: data_source_id [path] (required), name [query], start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -217,7 +301,11 @@
       "Databases"
     ],
     "summary": "Retrieve a database",
-    "text": "GET /v1/databases/{database_id} \u2014 Retrieve a database. Parameters: database_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/databases/{database_id} - Retrieve a database. Parameters: database_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -227,7 +315,11 @@
       "Databases"
     ],
     "summary": "Update a database",
-    "text": "PATCH /v1/databases/{database_id} \u2014 Update a database. Parameters: database_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/databases/{database_id} - Update a database. Parameters: database_id [path] (required). Request body fields: parent, title, description, is_inline, icon, cover, in_trash, is_locked."
   },
   {
     "doc_type": "reference",
@@ -237,7 +329,11 @@
       "Databases"
     ],
     "summary": "Create a database",
-    "text": "POST /v1/databases \u2014 Create a database. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/databases - Create a database. Request body fields: parent, title, description, is_inline, initial_data_source, icon, cover."
   },
   {
     "doc_type": "reference",
@@ -247,7 +343,11 @@
       "Search"
     ],
     "summary": "Search by title",
-    "text": "POST /v1/search \u2014 Search by title. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/search - Search by title. Request body fields: sort, query, start_cursor, page_size, filter."
   },
   {
     "doc_type": "reference",
@@ -257,7 +357,11 @@
       "Comments"
     ],
     "summary": "Create a comment",
-    "text": "POST /v1/comments \u2014 Create a comment. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/comments - Create a comment. Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -267,7 +371,11 @@
       "Comments"
     ],
     "summary": "List comments",
-    "text": "GET /v1/comments \u2014 List comments. Parameters: block_id, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/comments - List comments. Parameters: block_id [query] (required), start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -277,7 +385,11 @@
       "Comments"
     ],
     "summary": "Retrieve a comment",
-    "text": "GET /v1/comments/{comment_id} \u2014 Retrieve a comment. Parameters: comment_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/comments/{comment_id} - Retrieve a comment. Parameters: comment_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -287,7 +399,11 @@
       "Comments"
     ],
     "summary": "Update a comment",
-    "text": "PATCH /v1/comments/{comment_id} \u2014 Update a comment. Parameters: comment_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/comments/{comment_id} - Update a comment. Parameters: comment_id [path] (required). Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -297,7 +413,11 @@
       "Comments"
     ],
     "summary": "Delete a comment",
-    "text": "DELETE /v1/comments/{comment_id} \u2014 Delete a comment. Parameters: comment_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "DELETE /v1/comments/{comment_id} - Delete a comment. Parameters: comment_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -307,7 +427,11 @@
       "File uploads"
     ],
     "summary": "Create a file upload",
-    "text": "POST /v1/file_uploads \u2014 Create a file upload. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/file_uploads - Create a file upload. Request body fields: mode, filename, content_type, number_of_parts, external_url."
   },
   {
     "doc_type": "reference",
@@ -317,7 +441,11 @@
       "File uploads"
     ],
     "summary": "List file uploads",
-    "text": "GET /v1/file_uploads \u2014 List file uploads. Parameters: status, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/file_uploads - List file uploads. Parameters: status [query], start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -327,7 +455,11 @@
       "File uploads"
     ],
     "summary": "Upload a file",
-    "text": "POST /v1/file_uploads/{file_upload_id}/send \u2014 Upload a file. Parameters: file_upload_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/file_uploads/{file_upload_id}/send - Upload a file. Parameters: file_upload_id [path] (required). Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -337,7 +469,11 @@
       "File uploads"
     ],
     "summary": "Complete a multi-part file upload",
-    "text": "POST /v1/file_uploads/{file_upload_id}/complete \u2014 Complete a multi-part file upload. Parameters: file_upload_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/file_uploads/{file_upload_id}/complete - Complete a multi-part file upload. Parameters: file_upload_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -347,7 +483,11 @@
       "File uploads"
     ],
     "summary": "Retrieve a file upload",
-    "text": "GET /v1/file_uploads/{file_upload_id} \u2014 Retrieve a file upload. Parameters: file_upload_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/file_uploads/{file_upload_id} - Retrieve a file upload. Parameters: file_upload_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -357,7 +497,11 @@
       "Custom emojis"
     ],
     "summary": "List custom emojis",
-    "text": "GET /v1/custom_emojis \u2014 List custom emojis. Parameters: start_cursor, page_size, name."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/custom_emojis - List custom emojis. Parameters: start_cursor [query], page_size [query], name [query]."
   },
   {
     "doc_type": "reference",
@@ -367,7 +511,11 @@
       "Views"
     ],
     "summary": "List views",
-    "text": "GET /v1/views \u2014 List views. Parameters: database_id, data_source_id, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/views - List views. Parameters: database_id [query], data_source_id [query], start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -377,7 +525,11 @@
       "Views"
     ],
     "summary": "Create a view",
-    "text": "POST /v1/views \u2014 Create a view. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/views - Create a view. Request body fields: data_source_id, name, type, database_id, view_id, filter, sorts, quick_filters, create_database, configuration, position, placement."
   },
   {
     "doc_type": "reference",
@@ -387,7 +539,11 @@
       "Views"
     ],
     "summary": "Retrieve a view",
-    "text": "GET /v1/views/{view_id} \u2014 Retrieve a view. Parameters: view_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/views/{view_id} - Retrieve a view. Parameters: view_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -397,7 +553,11 @@
       "Views"
     ],
     "summary": "Update a view",
-    "text": "PATCH /v1/views/{view_id} \u2014 Update a view. Parameters: view_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "PATCH /v1/views/{view_id} - Update a view. Parameters: view_id [path] (required). Request body fields: name, filter, sorts, quick_filters, configuration."
   },
   {
     "doc_type": "reference",
@@ -407,7 +567,11 @@
       "Views"
     ],
     "summary": "Delete a view",
-    "text": "DELETE /v1/views/{view_id} \u2014 Delete a view. Parameters: view_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "DELETE /v1/views/{view_id} - Delete a view. Parameters: view_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -417,7 +581,11 @@
       "Views"
     ],
     "summary": "Create a view query",
-    "text": "POST /v1/views/{view_id}/queries \u2014 Create a view query. Parameters: view_id. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/views/{view_id}/queries - Create a view query. Parameters: view_id [path] (required). Request body fields: page_size."
   },
   {
     "doc_type": "reference",
@@ -427,7 +595,11 @@
       "Views"
     ],
     "summary": "Get view query results",
-    "text": "GET /v1/views/{view_id}/queries/{query_id} \u2014 Get view query results. Parameters: view_id, query_id, start_cursor, page_size."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "GET /v1/views/{view_id}/queries/{query_id} - Get view query results. Parameters: view_id [path] (required), query_id [path] (required), start_cursor [query], page_size [query]."
   },
   {
     "doc_type": "reference",
@@ -437,7 +609,11 @@
       "Views"
     ],
     "summary": "Delete a view query",
-    "text": "DELETE /v1/views/{view_id}/queries/{query_id} \u2014 Delete a view query. Parameters: view_id, query_id."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "DELETE /v1/views/{view_id}/queries/{query_id} - Delete a view query. Parameters: view_id [path] (required), query_id [path] (required)."
   },
   {
     "doc_type": "reference",
@@ -447,7 +623,11 @@
       "Meeting notes"
     ],
     "summary": "Create a meeting note",
-    "text": "POST /v1/blocks/meeting_notes \u2014 Create a meeting note. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/blocks/meeting_notes - Create a meeting note. Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -457,7 +637,11 @@
       "Meeting notes"
     ],
     "summary": "Query meeting notes",
-    "text": "POST /v1/blocks/meeting_notes/query \u2014 Query meeting notes. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/blocks/meeting_notes/query - Query meeting notes. Request body fields: filter, sort, limit."
   },
   {
     "doc_type": "reference",
@@ -467,7 +651,11 @@
       "OAuth"
     ],
     "summary": "Exchange an authorization code for an access and refresh token",
-    "text": "POST /v1/oauth/token \u2014 Exchange an authorization code for an access and refresh token. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/oauth/token - Exchange an authorization code for an access and refresh token. Accepts a request body."
   },
   {
     "doc_type": "reference",
@@ -477,7 +665,11 @@
       "OAuth"
     ],
     "summary": "Revoke a token",
-    "text": "POST /v1/oauth/revoke \u2014 Revoke a token. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/oauth/revoke - Revoke a token. Request body fields: token."
   },
   {
     "doc_type": "reference",
@@ -487,6 +679,10 @@
       "OAuth"
     ],
     "summary": "Introspect a token",
-    "text": "POST /v1/oauth/introspect \u2014 Introspect a token. Accepts a request body."
+    "versions": [
+      "2025-09-03",
+      "2026-03-11"
+    ],
+    "text": "POST /v1/oauth/introspect - Introspect a token. Request body fields: token."
   }
 ]
