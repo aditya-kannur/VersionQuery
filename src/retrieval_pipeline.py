@@ -67,9 +67,14 @@ def build_chroma_collection(chunks):
     metadatas = []
     for c in chunks:
         meta = {k: v for k, v in c.items() if k != "text"}
-        for key, val in meta.items():
+        for key, val in list(meta.items()):
             if isinstance(val, list):
                 meta[key] = ", ".join(str(v) for v in val)
+            elif val is None:
+                # Chroma metadata values must be str/int/float/bool — a
+                # bare None (e.g. an unsectioned changelog chunk) errors
+                # on add(), so drop the key instead of sending null.
+                del meta[key]
         metadatas.append(meta)
 
     ids = [f"chunk_{i}" for i in range(len(chunks))]
@@ -125,10 +130,21 @@ def hybrid_retrieve(query, collection, bm25, chunks, model, doc_type=None, versi
     then merge via RRF.
     """
     # --- Hard filter: which chunk indices survive doc_type/version filter ---
+    def version_matches(chunk):
+        if version is None:
+            return True
+        # Migration chunks carry a single "version" string. Reference
+        # chunks carry a "versions" list (the OpenAPI spec covers more
+        # than one API version at once). Changelog release_date isn't an
+        # API version and is intentionally not matched here.
+        if "versions" in chunk:
+            return version in chunk["versions"]
+        return chunk.get("version") == version
+
     filtered_indices = [
         i for i, c in enumerate(chunks)
         if (doc_type is None or c.get("doc_type") == doc_type)
-        and (version is None or c.get("version") == version or c.get("release_date") == version)
+        and version_matches(c)
     ]
     if not filtered_indices:
         return []
