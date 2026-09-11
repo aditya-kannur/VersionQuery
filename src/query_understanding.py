@@ -10,7 +10,7 @@ from src.prompts.system_prompt import SYSTEM_PROMPT   # teammate's Day 6 file
 from src.constants import KNOWN_VERSIONS               # Day 2 teammate file
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])   # reads your env var, never hardcode the key
-model = genai.GenerativeModel("gemini-2.5-flash-lite")  # gemini-1.5-flash was retired; "latest" alias resolved to a preview model with a 5 req/min, 20 req/day free-tier cap -- 2.5-flash-lite is GA and has a much more usable free quota
+model = genai.GenerativeModel("gemini-3.5-flash-lite")  # gemini-1.5-flash was retired, gemini-2.5-flash-lite is closed to new users as of this key -- Google's own 404 named this as the replacement
 
 
 def understand_query(user_question: str) -> dict:
