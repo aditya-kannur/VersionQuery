@@ -9,7 +9,7 @@ import google.generativeai as genai
 from src.grading_config import MAX_RETRIES, RELEVANCE_THRESHOLD  # teammate's Day 8 file
 from src.messages import NOT_FOUND_MESSAGE
 
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.5-flash-lite")  # gemini-1.5-flash was retired; "latest" alias resolved to a preview model with a 5 req/min, 20 req/day free-tier cap -- 2.5-flash-lite is GA and has a much more usable free quota
 
 GRADING_PROMPT = """You are grading whether a retrieved document chunk actually
 answers a developer's question.
