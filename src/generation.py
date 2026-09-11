@@ -13,7 +13,7 @@ import google.generativeai as genai
 from src.citation_template import CITATION_TEMPLATE
 from src.messages import NOT_FOUND_MESSAGE
 
-model = genai.GenerativeModel("gemini-flash-latest")  # alias for the current fast model; gemini-1.5-flash was retired
+model = genai.GenerativeModel("gemini-2.5-flash-lite")  # gemini-1.5-flash was retired; "latest" alias resolved to a preview model with a 5 req/min, 20 req/day free-tier cap -- 2.5-flash-lite is GA and has a much more usable free quota
 
 # Human-readable document names per doc_type, for the citation block —
 # matches the naming used in the PRD's example interaction.
