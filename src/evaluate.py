@@ -9,7 +9,10 @@ imported for its side effects.
 """
 import json
 
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
+
+load_dotenv()  # reads GEMINI_API_KEY from a .env file, if present
 
 from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask, build_graph
