@@ -8,8 +8,10 @@ all call the model) and a built retrieval index — run as a script, not
 imported for its side effects.
 """
 import json
+import time
 
 from dotenv import load_dotenv
+from google.api_core.exceptions import ResourceExhausted
 from sentence_transformers import SentenceTransformer
 
 try:
@@ -94,6 +96,29 @@ def evaluate_row(app, row):
     }
 
 
+RATE_LIMIT_BACKOFF_SECONDS = 65  # past the free tier's 60s window, plus margin
+
+
+def evaluate_row_with_retry(app, row, max_retries=3):
+    """
+    The free tier's per-minute quota is easy to exceed across a whole
+    test set (each row makes several LLM calls), so a 429 here is a
+    routine pacing issue, not a real failure. Wait out the window and
+    try the same row again, up to max_retries times.
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            return evaluate_row(app, row)
+        except ResourceExhausted:
+            if attempt == max_retries:
+                raise
+            print(
+                f"  rate limited on {row['id']} (attempt {attempt + 1}/{max_retries + 1}) "
+                f"-- waiting {RATE_LIMIT_BACKOFF_SECONDS}s"
+            )
+            time.sleep(RATE_LIMIT_BACKOFF_SECONDS)
+
+
 def run_evaluation(test_set_path="data/test_set.json"):
     with open(test_set_path, encoding="utf-8") as f:
         test_set = json.load(f)
@@ -104,7 +129,15 @@ def run_evaluation(test_set_path="data/test_set.json"):
     embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
     app = build_graph(collection, bm25, chunks, embed_model)
 
-    rows = [evaluate_row(app, row) for row in test_set]
+    rows = []
+    for i, row in enumerate(test_set):
+        print(f"[{i + 1}/{len(test_set)}] {row['id']}: {row['question'][:60]}...")
+        rows.append(evaluate_row_with_retry(app, row))
+        if i < len(test_set) - 1:
+            # Each row makes several LLM calls; pacing them proactively
+            # means most rows never hit the 429 retry path at all.
+            time.sleep(5)
+
     return summarize(rows)
 
 
