@@ -378,6 +378,30 @@ Endpoints, migration changes, and changelog entries are naturally meaningful uni
 | Backend          | FastAPI                         | Lightweight and fast to implement                |
 | Frontend         | Streamlit                       | Fastest option for a usable demo                 |
 
+## Running Locally
+
+```bash
+pip install -r requirements.txt
+echo "GEMINI_API_KEY=your-key-here" > .env
+```
+
+**Windows PowerShell users:** PowerShell's `>`/`echo` redirect can save
+`.env` as UTF-16 rather than UTF-8, which `python-dotenv` can't parse.
+Either create the file in a plain text editor and save as UTF-8, or use:
+
+```powershell
+[System.IO.File]::WriteAllText(".env", "GEMINI_API_KEY=your-key-here`n", [System.Text.UTF8Encoding]::new($false))
+```
+
+Then, in two terminals:
+
+```bash
+python -m uvicorn src.api:app --reload   # backend, builds the index on startup
+python -m streamlit run streamlit_app.py # frontend
+```
+
+(`python -m` avoids needing the pip Scripts folder on `PATH`.)
+
 ## Data Model
 
 A simplified representation of an indexed document chunk:
