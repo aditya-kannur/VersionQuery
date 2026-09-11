@@ -2,7 +2,7 @@ chromadb
 rank_bm25
 sentence-transformers
 langgraph
-fastapi
+fastapi>=0.141.0
 uvicorn
 streamlit
 python-dotenv
