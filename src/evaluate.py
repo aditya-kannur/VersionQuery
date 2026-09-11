@@ -12,7 +12,10 @@ import json
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
-load_dotenv()  # reads GEMINI_API_KEY from a .env file, if present
+try:
+    load_dotenv()  # reads GEMINI_API_KEY from a .env file, if present
+except UnicodeDecodeError:
+    print("WARNING: .env exists but isn't valid UTF-8 -- skipping it.")
 
 from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask, build_graph
