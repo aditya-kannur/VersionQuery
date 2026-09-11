@@ -123,11 +123,16 @@ def reciprocal_rank_fusion(rank_lists, k=60):
     return sorted(scores.keys(), key=lambda doc_id: scores[doc_id], reverse=True)
 
 
-def hybrid_retrieve(query, collection, bm25, chunks, model, doc_type=None, version=None, top_k=5):
+def hybrid_retrieve(query, collection, bm25, chunks, model, doc_type=None, version=None, top_k=3):
     """
     Hard filter FIRST (per PRD: filtering, not ranking, is what prevents
     wrong-version answers), then run dense + BM25 over the filtered set,
     then merge via RRF.
+
+    top_k=3 rather than 5: grading calls the LLM once per retrieved chunk,
+    so this directly sets how many grading calls one question makes. On
+    the free tier's per-minute quota, that's the gap between one question
+    fitting under the limit and not.
     """
     # --- Hard filter: which chunk indices survive doc_type/version filter ---
     def version_matches(chunk):
