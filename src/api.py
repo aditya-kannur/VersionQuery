@@ -7,9 +7,12 @@ compiled LangGraph app from src/graph.py.
 """
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
+
+load_dotenv()  # reads GEMINI_API_KEY (and anything else) from a .env file, if present
 
 from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask as run_graph
