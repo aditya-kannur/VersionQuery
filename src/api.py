@@ -5,9 +5,12 @@ Builds the retrieval index once at process startup (not per-request) via
 FastAPI's lifespan handler, then routes every /ask call through the
 compiled LangGraph app from src/graph.py.
 """
+import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger("versionquery")
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
@@ -79,7 +82,10 @@ def ask(request: AskRequest):
         # An LLM call failing mid-pipeline (rate limit, malformed JSON,
         # network blip) should degrade to the same honest-failure message
         # a "no grounding found" case gets — never a raw 500 with a stack
-        # trace, and never a silently wrong answer.
+        # trace, and never a silently wrong answer. But it must never fail
+        # SILENTLY either: log the real exception so a live bug doesn't
+        # just look identical to a correct "not found" in the terminal.
+        logger.exception("Pipeline failed for question: %r", question)
         return AskResponse(answer=NOT_FOUND_MESSAGE, citations=[])
 
     return AskResponse(answer=result["answer"], citations=result["citations"])
