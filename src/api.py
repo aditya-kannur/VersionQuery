@@ -12,7 +12,19 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
-load_dotenv()  # reads GEMINI_API_KEY (and anything else) from a .env file, if present
+try:
+    # reads GEMINI_API_KEY (and anything else) from a .env file, if present.
+    # A .env saved as UTF-16 (e.g. PowerShell's `echo "..." > .env`, which
+    # defaults to UTF-16 with a BOM) fails to parse -- treat that as "no
+    # .env available" rather than crashing the whole app before it starts,
+    # since GEMINI_API_KEY may already be set directly in the shell.
+    load_dotenv()
+except UnicodeDecodeError:
+    print(
+        "WARNING: .env exists but isn't valid UTF-8 (often a PowerShell "
+        "encoding issue) -- skipping it. Falling back to the shell's own "
+        "environment variables."
+    )
 
 from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask as run_graph
