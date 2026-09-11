@@ -10,7 +10,7 @@ from src.prompts.system_prompt import SYSTEM_PROMPT   # teammate's Day 6 file
 from src.constants import KNOWN_VERSIONS               # Day 2 teammate file
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])   # reads your env var, never hardcode the key
-model = genai.GenerativeModel("gemini-1.5-flash")        # fast/cheap model — fine for classification, not generation
+model = genai.GenerativeModel("gemini-flash-latest")  # alias for the current fast model; gemini-1.5-flash was retired
 
 
 def understand_query(user_question: str) -> dict:
