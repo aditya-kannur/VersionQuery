@@ -174,9 +174,32 @@ def summarize(rows):
     return {"metrics": report, "passed": thresholds_passed, "rows": rows}
 
 
+def print_failures(rows):
+    """
+    Aggregate pass/fail alone doesn't say WHICH question misbehaved --
+    print each row that failed any per-row check, with its actual
+    answer, so a failing metric is something you can act on.
+    """
+    checks = ["not_found_correct", "retrieval_hit", "version_correct", "citation_accurate"]
+    failing = [r for r in rows if any(r.get(c) is False for c in checks)]
+
+    if not failing:
+        print("No individual rows failed a check.")
+        return
+
+    print(f"{len(failing)} row(s) failed at least one check:\n")
+    for r in failing:
+        failed_checks = [c for c in checks if r.get(c) is False]
+        print(f"  {r['id']}: failed {', '.join(failed_checks)}")
+        print(f"    answer: {r['answer'][:150]}")
+
+
 if __name__ == "__main__":
     result = run_evaluation()
+    print()
     print(json.dumps(result["metrics"], indent=2))
     print()
     for metric, passed in result["passed"].items():
         print(f"{'PASS' if passed else 'FAIL'}  {metric}")
+    print()
+    print_failures(result["rows"])
