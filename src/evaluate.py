@@ -130,15 +130,29 @@ def run_evaluation(test_set_path="data/test_set.json"):
     app = build_graph(collection, bm25, chunks, embed_model)
 
     rows = []
+    skipped = []
     for i, row in enumerate(test_set):
         print(f"[{i + 1}/{len(test_set)}] {row['id']}: {row['question'][:60]}...")
-        rows.append(evaluate_row_with_retry(app, row))
+        try:
+            rows.append(evaluate_row_with_retry(app, row))
+        except ResourceExhausted:
+            # Retries are exhausted for THIS row specifically -- that's a
+            # permanently unlucky row, not a reason to throw away every
+            # row that already succeeded. Skip it and keep going; report
+            # it clearly in the summary instead of silently dropping it.
+            print(f"  giving up on {row['id']} after all retries -- skipping")
+            skipped.append(row["id"])
         if i < len(test_set) - 1:
             # Each row makes several LLM calls; pacing them proactively
             # means most rows never hit the 429 retry path at all.
             time.sleep(5)
 
-    return summarize(rows)
+    if skipped:
+        print(f"\n{len(skipped)} row(s) skipped after exhausting retries: {', '.join(skipped)}")
+
+    result = summarize(rows)
+    result["skipped"] = skipped
+    return result
 
 
 def summarize(rows):
@@ -197,6 +211,14 @@ def print_failures(rows):
 if __name__ == "__main__":
     result = run_evaluation()
     print()
+    if result["skipped"]:
+        print(
+            f"NOTE: metrics below are computed over {len(result['rows'])} of "
+            f"{len(result['rows']) + len(result['skipped'])} rows -- "
+            f"{', '.join(result['skipped'])} never got a real answer (rate "
+            f"limited past the retry budget), not scored either way."
+        )
+        print()
     print(json.dumps(result["metrics"], indent=2))
     print()
     for metric, passed in result["passed"].items():
