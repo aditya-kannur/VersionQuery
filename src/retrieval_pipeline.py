@@ -79,7 +79,7 @@ def build_chroma_collection(chunks):
 
     ids = [f"chunk_{i}" for i in range(len(chunks))]
 
-    collection.add(
+    collection.upsert(
         ids=ids,
         embeddings=embeddings,
         documents=texts,
