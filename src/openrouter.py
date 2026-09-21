@@ -1,6 +1,7 @@
 import os
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+import requests
+from langchain_openai import ChatOpenAI
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
@@ -17,12 +18,29 @@ chat_model = ChatOpenAI(
     max_tokens=2048,
 )
 
-embedding_function = OpenAIEmbeddings(
-    model=os.getenv("OPENROUTER_EMBEDDING_MODEL", "openai/text-embedding-3-small"),
-    api_key=_api_key(),
-    base_url=OPENROUTER_BASE_URL,
-    tiktoken_enabled=False,
-)
+class OpenRouterEmbeddings:
+    def __init__(self):
+        self.model = os.getenv(
+            "OPENROUTER_EMBEDDING_MODEL", "openai/text-embedding-3-small"
+        )
+        self.url = f"{OPENROUTER_BASE_URL}/embeddings"
+
+    def embed_documents(self, texts):
+        response = requests.post(
+            self.url,
+            headers={"Authorization": f"Bearer {_api_key()}"},
+            json={"model": self.model, "input": texts},
+            timeout=120,
+        )
+        response.raise_for_status()
+        data = response.json()["data"]
+        return [item["embedding"] for item in sorted(data, key=lambda item: item["index"])]
+
+    def embed_query(self, text):
+        return self.embed_documents([text])[0]
+
+
+embedding_function = OpenRouterEmbeddings()
 
 
 def generate_text(prompt: str) -> str:
