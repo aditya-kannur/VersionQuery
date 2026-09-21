@@ -6,6 +6,7 @@ FastAPI's lifespan handler, then routes every /ask call through the
 compiled LangGraph app from src/graph.py.
 """
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -13,7 +14,7 @@ from dotenv import load_dotenv
 logger = logging.getLogger("versionquery")
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 try:
     # reads GEMINI_API_KEY (and anything else) from a .env file, if present.
@@ -44,11 +45,14 @@ _state = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    embedding_function = GoogleGenerativeAIEmbeddings(
+        model=EMBEDDING_MODEL_NAME,
+        google_api_key=os.getenv("GEMINI_API_KEY"),
+    )
     chunks = load_all_chunks()
-    collection = build_chroma_collection(chunks)
+    collection = build_chroma_collection(chunks, embedding_function)
     bm25 = build_bm25_index(chunks)
-    embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-    _state["app"] = build_graph(collection, bm25, chunks, embed_model)
+    _state["app"] = build_graph(collection, bm25, chunks, embedding_function)
     yield
     _state.clear()
 

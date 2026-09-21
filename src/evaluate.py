@@ -8,11 +8,12 @@ all call the model) and a built retrieval index — run as a script, not
 imported for its side effects.
 """
 import json
+import os
 import time
 
 from dotenv import load_dotenv
 from google.api_core.exceptions import ResourceExhausted
-from sentence_transformers import SentenceTransformer
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 try:
     load_dotenv()  # reads GEMINI_API_KEY from a .env file, if present
@@ -124,10 +125,13 @@ def run_evaluation(test_set_path="data/test_set.json"):
         test_set = json.load(f)
 
     chunks = load_all_chunks()
-    collection = build_chroma_collection(chunks)
+    embedding_function = GoogleGenerativeAIEmbeddings(
+        model=EMBEDDING_MODEL_NAME,
+        google_api_key=os.getenv("GEMINI_API_KEY"),
+    )
+    collection = build_chroma_collection(chunks, embedding_function)
     bm25 = build_bm25_index(chunks)
-    embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-    app = build_graph(collection, bm25, chunks, embed_model)
+    app = build_graph(collection, bm25, chunks, embedding_function)
 
     rows = []
     skipped = []

@@ -31,10 +31,11 @@ class GraphState(TypedDict, total=False):
     citations: List[Dict[str, Any]]
 
 
-def build_graph(collection, bm25, chunks, embed_model):
+def build_graph(collection, bm25, chunks, embedding_function):
     """
     Returns a compiled LangGraph app. `collection`, `bm25`, `chunks` and
-    `embed_model` are the objects retrieval_pipeline.py's
+    `embedding_function` is the embedding client used by
+    retrieval_pipeline.py's
     build_chroma_collection() / build_bm25_index() / load_all_chunks()
     produce — passed in rather than rebuilt so one process reuses one index.
     """
@@ -44,7 +45,7 @@ def build_graph(collection, bm25, chunks, embed_model):
         # shape src.grading.retrieve_and_grade() expects: callable(question).
         def retrieve_fn(question_text):
             return hybrid_retrieve(
-                question_text, collection, bm25, chunks, embed_model,
+                question_text, collection, bm25, chunks, embedding_function,
                 doc_type=doc_type, version=version,
             )
         return retrieve_fn

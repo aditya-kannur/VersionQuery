@@ -4,10 +4,9 @@ hybrid retrieval (hard filter -> dense + BM25 -> reciprocal rank fusion).
 """
 import json
 import chromadb
-from sentence_transformers import SentenceTransformer
 from rank_bm25 import BM25Okapi
 
-from src.chroma_config import COLLECTION_NAME, PERSIST_DIRECTORY, EMBEDDING_MODEL_NAME
+from src.chroma_config import COLLECTION_NAME, PERSIST_DIRECTORY
 from src.chunking.migration_chunker import chunk_migration_file  # adjust import to your actual function names
 from src.chunking.changelog_chunker import chunk_changelog
 from src.chunking.reference_chunker import chunk_reference_file
@@ -49,7 +48,7 @@ def load_all_chunks():
 # 2. Embed + store in Chroma
 # ---------------------------------------------------------------------------
 
-def build_chroma_collection(chunks):
+def build_chroma_collection(chunks, embedding_function):
     """
     Embeds every chunk's text and stores it in a persistent Chroma
     collection, with metadata attached for hard filtering later.
@@ -57,10 +56,8 @@ def build_chroma_collection(chunks):
     client = chromadb.PersistentClient(path=PERSIST_DIRECTORY)
     collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
-    model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-
     texts = [c["text"] for c in chunks]
-    embeddings = model.encode(texts, show_progress_bar=True).tolist()
+    embeddings = embedding_function.embed_documents(texts)
 
     # Chroma metadata values must be str/int/float/bool — flatten anything
     # like a 'tags' list into a comma-joined string before storing.
@@ -123,7 +120,7 @@ def reciprocal_rank_fusion(rank_lists, k=60):
     return sorted(scores.keys(), key=lambda doc_id: scores[doc_id], reverse=True)
 
 
-def hybrid_retrieve(query, collection, bm25, chunks, model, doc_type=None, version=None, top_k=3):
+def hybrid_retrieve(query, collection, bm25, chunks, embedding_function, doc_type=None, version=None, top_k=3):
     """
     Hard filter FIRST (per PRD: filtering, not ranking, is what prevents
     wrong-version answers), then run dense + BM25 over the filtered set,
@@ -157,7 +154,7 @@ def hybrid_retrieve(query, collection, bm25, chunks, model, doc_type=None, versi
     filtered_ids = {f"chunk_{i}" for i in filtered_indices}
 
     # --- Dense retrieval (over full collection, then filtered to allowed ids) ---
-    query_embedding = model.encode([query]).tolist()
+    query_embedding = embedding_function.embed_query(query)
     dense_results = collection.query(query_embeddings=query_embedding, n_results=len(chunks))
     dense_ranked = [doc_id for doc_id in dense_results["ids"][0] if doc_id in filtered_ids]
 

@@ -369,7 +369,7 @@ Endpoints, migration changes, and changelog entries are naturally meaningful uni
 | ---------------- | ------------------------------- | ------------------------------------------------ |
 | Data Source      | Notion API Docs                 | Real, public, versioned documentation            |
 | Chunking         | Python rule-based parser        | Preserves natural document boundaries            |
-| Dense Embeddings | BGE-small-en / all-MiniLM-L6-v2 | Free and locally executable                      |
+| Dense Embeddings | Google Gemini `models/text-embedding-004` | Managed embedding API                            |
 | Sparse Retrieval | rank_bm25                       | Simple and lightweight                           |
 | Vector Store     | Chroma                          | Local, free, metadata filtering                  |
 | Hybrid Retrieval | Reciprocal Rank Fusion          | Simple combination of dense + sparse retrieval   |

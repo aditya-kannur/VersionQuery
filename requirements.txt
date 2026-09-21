@@ -1,6 +1,6 @@
 chromadb
 rank_bm25
-sentence-transformers
+langchain-google-genai
 langgraph
 fastapi>=0.141.0
 uvicorn
