@@ -3,6 +3,7 @@ embedding pipeline + Chroma vector store + BM25 sparse index +
 hybrid retrieval (hard filter -> dense + BM25 -> reciprocal rank fusion).
 """
 import json
+import time
 import chromadb
 from rank_bm25 import BM25Okapi
 
@@ -59,18 +60,6 @@ def build_chroma_collection(chunks, embedding_function):
     texts = [c["text"] for c in chunks]
     ids = [f"chunk_{i}" for i in range(len(chunks))]
 
-    if collection.count() == len(chunks):
-        existing = collection.get(include=[])
-        if set(existing["ids"]) == set(ids):
-            return collection
-
-    embeddings = []
-    batch_size = 100
-    for start in range(0, len(texts), batch_size):
-        embeddings.extend(
-            embedding_function.embed_documents(texts[start:start + batch_size])
-        )
-
     # Chroma metadata values must be str/int/float/bool — flatten anything
     # like a 'tags' list into a comma-joined string before storing.
     metadatas = []
@@ -86,12 +75,35 @@ def build_chroma_collection(chunks, embedding_function):
                 del meta[key]
         metadatas.append(meta)
 
-    collection.upsert(
-        ids=ids,
-        embeddings=embeddings,
-        documents=texts,
-        metadatas=metadatas,
-    )
+    existing = collection.get(ids=ids, include=[])
+    existing_ids = set(existing["ids"])
+    if existing_ids == set(ids):
+        return collection
+
+    batch_size = 100
+    for start in range(0, len(texts), batch_size):
+        batch_ids = ids[start:start + batch_size]
+        if set(batch_ids).issubset(existing_ids):
+            continue
+
+        for attempt in range(5):
+            try:
+                embeddings = embedding_function.embed_documents(
+                    texts[start:start + batch_size]
+                )
+                break
+            except Exception:
+                if attempt == 4:
+                    raise
+                time.sleep(2 ** attempt)
+
+        collection.upsert(
+            ids=batch_ids,
+            embeddings=embeddings,
+            documents=texts[start:start + batch_size],
+            metadatas=metadatas[start:start + batch_size],
+        )
+        existing_ids.update(batch_ids)
 
     return collection
 
