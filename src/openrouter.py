@@ -21,6 +21,7 @@ embedding_function = OpenAIEmbeddings(
     model=os.getenv("OPENROUTER_EMBEDDING_MODEL", "openai/text-embedding-3-small"),
     api_key=_api_key(),
     base_url=OPENROUTER_BASE_URL,
+    tiktoken_enabled=False,
 )
 
 
