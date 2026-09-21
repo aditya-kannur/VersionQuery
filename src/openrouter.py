@@ -14,6 +14,7 @@ chat_model = ChatOpenAI(
     model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o"),
     api_key=_api_key(),
     base_url=OPENROUTER_BASE_URL,
+    max_tokens=2048,
 )
 
 embedding_function = OpenAIEmbeddings(
