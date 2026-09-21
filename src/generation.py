@@ -8,12 +8,10 @@ cannot answer from anything outside what was actually retrieved and graded.
 """
 import json
 
-import google.generativeai as genai
-
 from src.citation_template import CITATION_TEMPLATE
 from src.messages import NOT_FOUND_MESSAGE
 
-model = genai.GenerativeModel("gemini-3.5-flash-lite")  # gemini-1.5-flash was retired, gemini-2.5-flash-lite is closed to new users as of this key -- Google's own 404 named this as the replacement
+from src.openrouter import generate_text
 
 # Human-readable document names per doc_type, for the citation block —
 # matches the naming used in the PRD's example interaction.
@@ -105,8 +103,7 @@ def generate_answer(question, chunks, requested_version=None):
         version=requested_version or "not specified",
         context=_format_context(chunks),
     )
-    response = model.generate_content(prompt)
-    answer_text = response.text.strip()
+    answer_text = generate_text(prompt).strip()
 
     citations = [build_citation(c, requested_version) for c in chunks]
 
@@ -129,8 +126,7 @@ def verify_answer(question, answer_text, chunks, requested_version=None):
         answer=answer_text,
         context=_format_context(chunks),
     )
-    response = model.generate_content(prompt)
-    raw = response.text.strip().strip("`").removeprefix("json").strip()
+    raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
 
     try:
         result = json.loads(raw)

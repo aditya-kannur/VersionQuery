@@ -1,9 +1,8 @@
 chromadb
 rank_bm25
-langchain-google-genai
+langchain-openai
 langgraph
 fastapi>=0.141.0
 uvicorn
 streamlit
 python-dotenv
-google-generativeai

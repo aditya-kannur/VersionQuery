@@ -6,31 +6,15 @@ FastAPI's lifespan handler, then routes every /ask call through the
 compiled LangGraph app from src/graph.py.
 """
 import logging
-import os
 from contextlib import asynccontextmanager
-
-from dotenv import load_dotenv
 
 logger = logging.getLogger("versionquery")
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from dotenv import load_dotenv
 
-try:
-    # reads GEMINI_API_KEY (and anything else) from a .env file, if present.
-    # A .env saved as UTF-16 (e.g. PowerShell's `echo "..." > .env`, which
-    # defaults to UTF-16 with a BOM) fails to parse -- treat that as "no
-    # .env available" rather than crashing the whole app before it starts,
-    # since GEMINI_API_KEY may already be set directly in the shell.
-    load_dotenv()
-except UnicodeDecodeError:
-    print(
-        "WARNING: .env exists but isn't valid UTF-8 (often a PowerShell "
-        "encoding issue) -- skipping it. Falling back to the shell's own "
-        "environment variables."
-    )
+load_dotenv()
 
-from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask as run_graph
 from src.graph import build_graph
 from src.messages import NOT_FOUND_MESSAGE
@@ -39,16 +23,13 @@ from src.retrieval_pipeline import (
     build_chroma_collection,
     load_all_chunks,
 )
+from src.openrouter import embedding_function
 
 _state = {}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    embedding_function = GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL_NAME,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-    )
     chunks = load_all_chunks()
     collection = build_chroma_collection(chunks, embedding_function)
     bm25 = build_bm25_index(chunks)

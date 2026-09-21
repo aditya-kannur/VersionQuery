@@ -4,12 +4,11 @@ retrieved chunk for relevance, version correctness, and doc-type fit.
 Failed grading triggers a query-rewrite retry, capped per config.
 """
 import json
-import google.generativeai as genai
 
 from src.grading_config import MAX_RETRIES, RELEVANCE_THRESHOLD  # teammate's Day 8 file
 from src.messages import NOT_FOUND_MESSAGE
 
-model = genai.GenerativeModel("gemini-3.5-flash-lite")  # gemini-1.5-flash was retired, gemini-2.5-flash-lite is closed to new users as of this key -- Google's own 404 named this as the replacement
+from src.openrouter import generate_text
 
 GRADING_PROMPT = """You are grading whether a retrieved document chunk actually
 answers a developer's question.
@@ -42,8 +41,7 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
         chunk_text=chunk["text"],
     )
 
-    response = model.generate_content(prompt)
-    raw = response.text.strip().strip("`").removeprefix("json").strip()
+    raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
 
     try:
         result = json.loads(raw)
@@ -74,8 +72,7 @@ for a document search, without changing its meaning or intent:
 "{original_question}"
 
 Respond with ONLY the rewritten question, nothing else."""
-    response = model.generate_content(prompt)
-    return response.text.strip()
+    return generate_text(prompt).strip()
 
 
 def retrieve_and_grade(question, expected_version, expected_doc_type, retrieve_fn):

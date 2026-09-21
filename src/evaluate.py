@@ -3,24 +3,21 @@ Day 14 — evaluation script. Runs every row in data/test_set.json through
 the full pipeline and reports the PRD's four metrics against the
 thresholds in src/metrics_config.py.
 
-Requires GEMINI_API_KEY (query understanding + generation + verification
+Requires OPENROUTER_API_KEY (query understanding + generation + verification
 all call the model) and a built retrieval index — run as a script, not
 imported for its side effects.
 """
 import json
-import os
 import time
 
 from dotenv import load_dotenv
-from google.api_core.exceptions import ResourceExhausted
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from openai import RateLimitError
 
 try:
-    load_dotenv()  # reads GEMINI_API_KEY from a .env file, if present
+    load_dotenv()  # reads OPENROUTER_API_KEY from a .env file, if present
 except UnicodeDecodeError:
     print("WARNING: .env exists but isn't valid UTF-8 -- skipping it.")
 
-from src.chroma_config import EMBEDDING_MODEL_NAME
 from src.graph import ask, build_graph
 from src.messages import NOT_FOUND_MESSAGE
 from src.metrics_config import (
@@ -31,6 +28,7 @@ from src.metrics_config import (
     MIN_VERSION_CORRECTNESS,
 )
 from src.retrieval_pipeline import build_bm25_index, build_chroma_collection, load_all_chunks
+from src.openrouter import embedding_function
 
 
 def evaluate_row(app, row):
@@ -110,7 +108,7 @@ def evaluate_row_with_retry(app, row, max_retries=3):
     for attempt in range(max_retries + 1):
         try:
             return evaluate_row(app, row)
-        except ResourceExhausted:
+        except RateLimitError:
             if attempt == max_retries:
                 raise
             print(
@@ -125,10 +123,6 @@ def run_evaluation(test_set_path="data/test_set.json"):
         test_set = json.load(f)
 
     chunks = load_all_chunks()
-    embedding_function = GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL_NAME,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-    )
     collection = build_chroma_collection(chunks, embedding_function)
     bm25 = build_bm25_index(chunks)
     app = build_graph(collection, bm25, chunks, embedding_function)
