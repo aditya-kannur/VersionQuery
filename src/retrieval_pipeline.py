@@ -57,7 +57,19 @@ def build_chroma_collection(chunks, embedding_function):
     collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
     texts = [c["text"] for c in chunks]
-    embeddings = embedding_function.embed_documents(texts)
+    ids = [f"chunk_{i}" for i in range(len(chunks))]
+
+    if collection.count() == len(chunks):
+        existing = collection.get(include=[])
+        if set(existing["ids"]) == set(ids):
+            return collection
+
+    embeddings = []
+    batch_size = 100
+    for start in range(0, len(texts), batch_size):
+        embeddings.extend(
+            embedding_function.embed_documents(texts[start:start + batch_size])
+        )
 
     # Chroma metadata values must be str/int/float/bool — flatten anything
     # like a 'tags' list into a comma-joined string before storing.
@@ -73,8 +85,6 @@ def build_chroma_collection(chunks, embedding_function):
                 # on add(), so drop the key instead of sending null.
                 del meta[key]
         metadatas.append(meta)
-
-    ids = [f"chunk_{i}" for i in range(len(chunks))]
 
     collection.upsert(
         ids=ids,
