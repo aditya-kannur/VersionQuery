@@ -29,9 +29,11 @@ st.markdown("""
 .hero h1 { color:white; font-size:clamp(2.2rem,5vw,4.1rem); letter-spacing:-.06em; margin:.45rem 0 .65rem; }
 .hero p { color:#dbeafe; font-size:1.05rem; max-width:670px; margin:0; line-height:1.6; }
 .section-title { color:var(--ink); font-size:1.35rem; font-weight:700; margin:2rem 0 .8rem; }
-.card { background:white; border:1px solid var(--line); border-radius:16px; padding:1.15rem 1.25rem; min-height:115px; box-shadow:0 4px 14px rgba(23,32,51,.04); }
-.card h3 { margin:.1rem 0 .45rem; color:var(--ink); font-size:1rem; }
+.card { background:white; border:1px solid var(--line); border-radius:16px; padding:1.15rem 1.25rem; min-height:110px; box-shadow:0 4px 14px rgba(23,32,51,.04); }
+.card-title { margin:.1rem 0 .45rem; color:var(--ink); font-size:1rem; font-weight:700; }
 .card p { color:var(--muted); line-height:1.5; margin:0; font-size:.93rem; }
+.stButton > button { border-radius:10px; border:1px solid #cbd5e1; color:#1e3a5f; font-weight:600; transition:all .2s ease; }
+.stButton > button:hover { border-color:#2563eb; color:#1d4ed8; background:#eff6ff; }
 .stChatMessage { border:1px solid var(--line); border-radius:16px; }
 </style>
 """, unsafe_allow_html=True)
@@ -76,10 +78,17 @@ st.markdown("""
 st.markdown('<div class="section-title">Start with a question</div>', unsafe_allow_html=True)
 st.caption("Include a version when you can. For a general question, ask for the latest version and VersionQuery will resolve it automatically.")
 
+examples = [
+    ("Reference lookup", "How do I retrieve a database in 2026-03-11?"),
+    ("Migration path", "What changed from 2021-08-16 to 2022-06-28?"),
+    ("Latest docs", "What is the latest API version in the docs?"),
+]
 cols = st.columns(3)
-for col, title, body in zip(cols, ["Reference lookup", "Migration path", "Latest docs"], ["How do I retrieve a database in 2026-03-11?", "What changed from 2021-08-16 to 2022-06-28?", "What is the latest API version in the docs?"]):
+for index, (col, (title, body)) in enumerate(zip(cols, examples)):
     with col:
-        st.markdown(f'<div class="card"><h3>{title}</h3><p>{body}</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card"><div class="card-title">{title}</div><p>{body}</p></div>', unsafe_allow_html=True)
+        if st.button("Try this example", key=f"example_{index}", use_container_width=True):
+            st.session_state.pending_question = body
 
 with st.expander("How answers are produced"):
     st.markdown("1. Understand the intent and version.\n2. Search matching reference, migration, or changelog documents.\n3. Grade the evidence and generate a cited answer.\n4. Refuse unsupported claims instead of guessing.")
@@ -93,7 +102,9 @@ for turn in st.session_state.history:
     with st.chat_message("assistant"):
         render_answer(turn["answer"], turn.get("citations", []))
 
-question = st.chat_input("Ask about a version, migration, or the latest API docs…")
+question = st.session_state.pop("pending_question", None)
+if question is None:
+    question = st.chat_input("Ask about a version, migration, or the latest API docs…")
 
 if question:
     st.session_state.history.append({"question": question, "answer": None, "citations": []})
