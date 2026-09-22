@@ -30,11 +30,17 @@ def get_hop_sequence(from_version, to_version):
     return hops
 
 
-def decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn):
+def decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn, original_question=None):
     """
     Builds the hop sequence, then retrieves + grades the migration chunk
     for each hop independently, using Day 8's retrieve_and_grade().
     retrieve_and_grade_fn should already be scoped to doc_type='migration'.
+
+    original_question is the user's actual question. When provided it is
+    passed to retrieve_and_grade so that grading scores relevance against
+    what was really asked (e.g. "what changed in the Users GET route")
+    rather than the generic per-hop stub. Falls back to the stub when the
+    caller doesn't supply one (e.g. tests).
     """
     hops = get_hop_sequence(from_version, to_version)
     if hops is None:
@@ -42,7 +48,11 @@ def decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn):
 
     hop_results = []
     for version_a, version_b in hops:
-        question = f"What changed migrating from {version_a} to {version_b}?"
+        # Use the user's question when available so grading can judge
+        # relevance correctly; fall back to the generic stub otherwise.
+        hop_stub = f"What changed migrating from {version_a} to {version_b}?"
+        question = original_question or hop_stub
+
         result = retrieve_and_grade_fn(question, expected_version=version_b)
 
         if result["status"] != "found":

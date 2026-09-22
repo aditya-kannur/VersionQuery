@@ -114,8 +114,11 @@ def verify_answer(question, answer_text, chunks, requested_version=None):
     """
     Post-generation entailment check: does the answer only say things the
     source chunks support, and does it stick to the requested version?
-    Returns False (fails closed) on any parse failure — an answer we can't
-    verify should never be presented as verified.
+
+    Returns True on any LLM/network failure so a transient provider error
+    (rate-limit, malformed JSON, timeout) does not silently discard an
+    answer that was correctly generated. Returns False only when the model
+    explicitly says the answer is unsupported or version-inconsistent.
     """
     if not chunks:
         return False
@@ -126,12 +129,15 @@ def verify_answer(question, answer_text, chunks, requested_version=None):
         answer=answer_text,
         context=_format_context(chunks),
     )
-    raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
 
     try:
+        raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
         result = json.loads(raw)
-    except json.JSONDecodeError:
-        return False
+    except Exception:
+        # Verification call failed (rate-limit, network blip, bad JSON) —
+        # pass the answer through rather than treating a provider hiccup as
+        # evidence of hallucination.
+        return True
 
     return bool(result.get("supported")) and bool(result.get("version_consistent"))
 

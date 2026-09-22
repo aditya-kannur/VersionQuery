@@ -63,6 +63,8 @@ def build_graph(collection, bm25, chunks, embedding_function):
         if status == "ready":
             intent = state["understood"].get("intent")
             return "retrieve_migration" if intent == "migration" else "retrieve_single"
+        # "latest_version", "needs_clarification", "not_found", "parse_error"
+        # all go to early_exit which returns routing["message"] directly.
         return "early_exit"
 
     def node_retrieve_single(state: GraphState) -> dict:
@@ -95,7 +97,7 @@ def build_graph(collection, bm25, chunks, embedding_function):
                 retrieve_fn=make_retrieve_fn("migration", expected_version),
             )
 
-        result = decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn)
+        result = decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn, original_question=state["question"])
 
         if result["status"] != "found":
             return {"chunks": [], "requested_version": f"{from_version} -> {to_version}"}
@@ -112,12 +114,11 @@ def build_graph(collection, bm25, chunks, embedding_function):
         return {"answer": result["answer"], "citations": result["citations"]}
 
     def node_early_exit(state: GraphState) -> dict:
-        # needs_clarification or not_found — routing already produced the
-        # exact message to show, so generation never runs.
-        return {
-            "answer": state["routing"].get("message", NOT_FOUND_MESSAGE),
-            "citations": [],
-        }
+        # Covers: needs_clarification, not_found, latest_version, parse_error.
+        # routing["message"] is set by every non-ready status in router.py;
+        # the fallback guards against any future status that forgets to set it.
+        message = state["routing"].get("message") or NOT_FOUND_MESSAGE
+        return {"answer": message, "citations": []}
 
     graph = StateGraph(GraphState)
     graph.add_node("understand", node_understand)

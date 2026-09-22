@@ -13,6 +13,22 @@ import time
 from dotenv import load_dotenv
 from openai import RateLimitError
 
+# ResourceExhausted is the gRPC/google-api-core equivalent of a 429.
+# Some OpenRouter client versions raise this instead of RateLimitError,
+# so we import it here and treat both identically in the retry loop.
+try:
+    from grpc import RpcError as ResourceExhausted  # grpc path
+except ImportError:
+    try:
+        from google.api_core.exceptions import ResourceExhausted  # google-api-core path
+    except ImportError:
+        # Neither grpc nor google-api-core is installed — define a dummy
+        # exception class so the except clause in run_evaluation is valid
+        # Python without crashing on import. It will never actually be
+        # raised if neither library is present.
+        class ResourceExhausted(Exception):  # type: ignore[no-redef]
+            pass
+
 try:
     load_dotenv()  # reads OPENROUTER_API_KEY from a .env file, if present
 except UnicodeDecodeError:
