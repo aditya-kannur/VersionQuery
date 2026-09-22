@@ -28,6 +28,11 @@ def route_query(understood_query: dict) -> dict:
             "message": LATEST_VERSION_MESSAGE.format(version=KNOWN_VERSIONS[-1]),
         }
 
+    # Query understanding failed to parse the LLM response — ask the user
+    # to rephrase rather than returning a hard "not found".
+    if understood_query.get("parse_error"):
+        return {"status": "needs_clarification", "message": CLARIFICATION_QUESTION}
+
     intent = understood_query.get("intent")
     doc_types = INTENT_TO_DOC_TYPES.get(intent)
 

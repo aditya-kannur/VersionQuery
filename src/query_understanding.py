@@ -36,9 +36,11 @@ Respond with ONLY valid JSON, no markdown fences, no explanation.
     try:
         result = json.loads(raw_text)
     except json.JSONDecodeError:
-        # Fail loud, not silent — a malformed LLM response shouldn't
-        # masquerade as a valid "no version found" result.
-        raise ValueError(f"Could not parse model output as JSON: {raw_text}")
+        # Malformed LLM output — we can't trust the classification, so
+        # treat it as a missing-version clarification rather than crashing
+        # the entire request. The user gets asked to rephrase instead of
+        # seeing a 500 / SERVICE_UNAVAILABLE response.
+        return {"intent": None, "version": None, "parse_error": True}
 
     latest_terms = ("latest", "newest", "most recent", "current")
     asks_for_latest_version = (

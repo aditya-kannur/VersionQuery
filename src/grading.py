@@ -4,11 +4,18 @@ retrieved chunk for relevance, version correctness, and doc-type fit.
 Failed grading triggers a query-rewrite retry, capped per config.
 """
 import json
+import time
 
 from src.grading_config import MAX_RETRIES, RELEVANCE_THRESHOLD  # teammate's Day 8 file
 from src.messages import NOT_FOUND_MESSAGE
 
 from src.openrouter import generate_text
+
+# Small pause between consecutive per-chunk grading calls so we don't
+# burst all 3 calls at once and immediately saturate the free-tier
+# per-minute quota. 1 second is enough to spread them out without
+# noticeably slowing down a single request.
+_INTER_CHUNK_SLEEP = 1.0
 
 GRADING_PROMPT = """You are grading whether a retrieved document chunk actually
 answers a developer's question.
@@ -55,10 +62,13 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
 
 def grade_chunks(question, expected_version, expected_doc_type, chunks):
     """Returns only the chunks that pass grading on all 3 dimensions."""
-    return [
-        c for c in chunks
-        if grade_chunk(question, expected_version, expected_doc_type, c)
-    ]
+    passed = []
+    for i, c in enumerate(chunks):
+        if i > 0:
+            time.sleep(_INTER_CHUNK_SLEEP)
+        if grade_chunk(question, expected_version, expected_doc_type, c):
+            passed.append(c)
+    return passed
 
 
 def rewrite_query(original_question):
