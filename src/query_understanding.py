@@ -40,9 +40,15 @@ Respond with ONLY valid JSON, no markdown fences, no explanation.
         # masquerade as a valid "no version found" result.
         raise ValueError(f"Could not parse model output as JSON: {raw_text}")
 
-    if not result.get("version") and any(
-        term in user_question.lower() for term in ("latest", "newest", "most recent", "current")
-    ):
+    latest_terms = ("latest", "newest", "most recent", "current")
+    asks_for_latest_version = (
+        "version" in user_question.lower()
+        and any(term in user_question.lower() for term in latest_terms)
+    )
+    if not result.get("version") and asks_for_latest_version:
         result["version"] = KNOWN_VERSIONS[-1]
+
+    if asks_for_latest_version:
+        result["latest_version_query"] = True
 
     return result

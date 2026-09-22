@@ -11,3 +11,5 @@ INVALID_VERSION_MESSAGE = (
     "I couldn't find API version {version} in this documentation set. "
     "Try one of: {supported_versions}."
 )
+
+LATEST_VERSION_MESSAGE = "The latest API version covered by these docs is {version}."
