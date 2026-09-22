@@ -17,7 +17,8 @@ load_dotenv()
 
 from src.graph import ask as run_graph
 from src.graph import build_graph
-from src.messages import NOT_FOUND_MESSAGE
+from src.constants import KNOWN_VERSIONS
+from src.messages import LATEST_VERSION_MESSAGE, SERVICE_UNAVAILABLE_MESSAGE
 from src.retrieval_pipeline import (
     build_bm25_index,
     build_chroma_collection,
@@ -56,6 +57,15 @@ def ask(request: AskRequest):
     if not question:
         raise HTTPException(status_code=400, detail="question must not be empty")
 
+    normalized_question = question.lower()
+    if "version" in normalized_question and any(
+        term in normalized_question for term in ("latest", "newest", "most recent", "current")
+    ):
+        return AskResponse(
+            answer=LATEST_VERSION_MESSAGE.format(version=KNOWN_VERSIONS[-1]),
+            citations=[],
+        )
+
     if "app" not in _state:
         # Startup's index build hasn't finished (or failed) — fail loudly
         # rather than crashing on a KeyError further down.
@@ -64,14 +74,9 @@ def ask(request: AskRequest):
     try:
         result = run_graph(_state["app"], question)
     except Exception:
-        # An LLM call failing mid-pipeline (rate limit, malformed JSON,
-        # network blip) should degrade to the same honest-failure message
-        # a "no grounding found" case gets — never a raw 500 with a stack
-        # trace, and never a silently wrong answer. But it must never fail
-        # SILENTLY either: log the real exception so a live bug doesn't
-        # just look identical to a correct "not found" in the terminal.
+        # Do not disguise provider failures as valid retrieval results.
         logger.exception("Pipeline failed for question: %r", question)
-        return AskResponse(answer=NOT_FOUND_MESSAGE, citations=[])
+        return AskResponse(answer=SERVICE_UNAVAILABLE_MESSAGE, citations=[])
 
     return AskResponse(answer=result["answer"], citations=result["citations"])
 
