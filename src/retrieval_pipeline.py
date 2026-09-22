@@ -1,29 +1,31 @@
 """
-embedding pipeline + Chroma vector store + BM25 sparse index +
+Embedding pipeline + in-memory numpy vector store + BM25 sparse index +
 hybrid retrieval (hard filter -> dense + BM25 -> reciprocal rank fusion).
+
+ChromaDB was replaced with a lightweight numpy-based vector store to avoid
+the ~1.2 GB hnswlib/chromadb build dependency. Functionality is identical:
+cosine similarity search over pre-computed embeddings, with the same hard
+metadata filtering and RRF fusion as before.
 """
-import json
 import time
-import chromadb
+import numpy as np
 from rank_bm25 import BM25Okapi
 
-from src.chroma_config import COLLECTION_NAME, PERSIST_DIRECTORY
-from src.chunking.migration_chunker import chunk_migration_file  # adjust import to your actual function names
+from src.chunking.migration_chunker import chunk_migration_file
 from src.chunking.changelog_chunker import chunk_changelog
 from src.chunking.reference_chunker import chunk_reference_file
 from src.data_sources import DATA_SOURCES
 
 
 # ---------------------------------------------------------------------------
-# 1. Load + chunk everything 
+# 1. Load + chunk everything
 # ---------------------------------------------------------------------------
 
 def load_all_chunks():
     """
     Runs every chunker over its matching files (per src/data_sources.py)
-    and returns one flat list of chunks, each with a 'text' + 'metadata'
-    (or equivalent flat dict — adjust field names to match what your
-    chunkers actually return).
+    and returns one flat list of chunks, each a dict with at minimum a
+    'text' key plus doc-type-specific metadata fields.
     """
     all_chunks = []
 
@@ -46,70 +48,69 @@ def load_all_chunks():
 
 
 # ---------------------------------------------------------------------------
-# 2. Embed + store in Chroma
+# 2. Numpy vector store (replaces ChromaDB)
 # ---------------------------------------------------------------------------
+
+class NumpyVectorStore:
+    """
+    Pure-numpy cosine similarity store. Holds embeddings as a float32
+    matrix so similarity search is a single batched dot product — no
+    external libraries, no disk writes, no build step.
+
+    Interface is intentionally minimal: build once at startup, query many
+    times per request, same as the ChromaDB collection it replaces.
+    """
+
+    def __init__(self, embeddings: list[list[float]], ids: list[str]):
+        matrix = np.array(embeddings, dtype=np.float32)
+        # L2-normalise rows so dot product == cosine similarity
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        norms = np.where(norms == 0, 1.0, norms)  # avoid div-by-zero on zero vectors
+        self._matrix = matrix / norms
+        self._ids = ids
+
+    def query(self, query_embedding: list[float], n_results: int) -> list[str]:
+        """
+        Returns up to n_results chunk IDs sorted by descending cosine
+        similarity to query_embedding.
+        """
+        vec = np.array(query_embedding, dtype=np.float32)
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec = vec / norm
+        scores = self._matrix @ vec          # shape (n_chunks,)
+        top_n = min(n_results, len(self._ids))
+        top_indices = np.argpartition(scores, -top_n)[-top_n:]
+        top_indices = top_indices[np.argsort(scores[top_indices])[::-1]]
+        return [self._ids[i] for i in top_indices]
+
 
 def build_chroma_collection(chunks, embedding_function):
     """
-    Embeds every chunk's text and stores it in a persistent Chroma
-    collection, with metadata attached for hard filtering later.
+    Kept with the original name so api.py and graph.py need zero changes.
+    Builds and returns a NumpyVectorStore instead of a Chroma collection.
     """
-    client = chromadb.PersistentClient(path=PERSIST_DIRECTORY)
-    collection = client.get_or_create_collection(name=COLLECTION_NAME)
-
     texts = [c["text"] for c in chunks]
     ids = [f"chunk_{i}" for i in range(len(chunks))]
 
-    # Chroma metadata values must be str/int/float/bool — flatten anything
-    # like a 'tags' list into a comma-joined string before storing.
-    metadatas = []
-    for c in chunks:
-        meta = {k: v for k, v in c.items() if k != "text"}
-        for key, val in list(meta.items()):
-            if isinstance(val, list):
-                meta[key] = ", ".join(str(v) for v in val)
-            elif val is None:
-                # Chroma metadata values must be str/int/float/bool — a
-                # bare None (e.g. an unsectioned changelog chunk) errors
-                # on add(), so drop the key instead of sending null.
-                del meta[key]
-        metadatas.append(meta)
-
-    existing = collection.get(ids=ids, include=[])
-    existing_ids = set(existing["ids"])
-    if existing_ids == set(ids):
-        return collection
-
+    all_embeddings = []
     batch_size = 100
     for start in range(0, len(texts), batch_size):
-        batch_ids = ids[start:start + batch_size]
-        if set(batch_ids).issubset(existing_ids):
-            continue
-
         for attempt in range(5):
             try:
-                embeddings = embedding_function.embed_documents(
-                    texts[start:start + batch_size]
-                )
+                batch = embedding_function.embed_documents(texts[start:start + batch_size])
+                all_embeddings.extend(batch)
                 break
             except Exception:
                 if attempt == 4:
                     raise
                 time.sleep(2 ** attempt)
 
-        collection.upsert(
-            ids=batch_ids,
-            embeddings=embeddings,
-            documents=texts[start:start + batch_size],
-            metadatas=metadatas[start:start + batch_size],
-        )
-        existing_ids.update(batch_ids)
-
-    return collection
+    return NumpyVectorStore(all_embeddings, ids)
 
 
 # ---------------------------------------------------------------------------
-# 3. BM25 sparse index (in-memory, over the same chunk texts)
+# 3. BM25 sparse index (unchanged)
 # ---------------------------------------------------------------------------
 
 def build_bm25_index(chunks):
@@ -119,48 +120,40 @@ def build_bm25_index(chunks):
     API docs vocabulary.
     """
     tokenized_corpus = [c["text"].lower().split() for c in chunks]
-    bm25 = BM25Okapi(tokenized_corpus)
-    return bm25
+    return BM25Okapi(tokenized_corpus)
 
 
 # ---------------------------------------------------------------------------
-# 4. Hybrid retrieval: hard filter -> dense + BM25 -> RRF merge
+# 4. Hybrid retrieval: hard filter -> dense + BM25 -> RRF merge (unchanged)
 # ---------------------------------------------------------------------------
 
 def reciprocal_rank_fusion(rank_lists, k=60):
     """
     rank_lists: list of ranked id-lists, e.g. [dense_ranked_ids, bm25_ranked_ids]
     Each id's fused score = sum over lists of 1 / (k + rank_in_that_list).
-    k=60 is the standard RRF default from the original paper - dampens the
-    impact of any single list's top result dominating the fusion.
+    k=60 is the standard RRF default — dampens the impact of any single
+    list's top result dominating the fusion.
     """
     scores = {}
     for ranked_ids in rank_lists:
         for rank, doc_id in enumerate(ranked_ids):
             scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank + 1)
-
     return sorted(scores.keys(), key=lambda doc_id: scores[doc_id], reverse=True)
 
 
-def hybrid_retrieve(query, collection, bm25, chunks, embedding_function, doc_type=None, version=None, top_k=3):
+def hybrid_retrieve(query, collection, bm25, chunks, embedding_function,
+                    doc_type=None, version=None, top_k=3):
     """
-    Hard filter FIRST (per PRD: filtering, not ranking, is what prevents
-    wrong-version answers), then run dense + BM25 over the filtered set,
-    then merge via RRF.
+    Hard filter FIRST (filtering, not ranking, is what prevents wrong-version
+    answers), then dense + BM25 over the filtered set, then RRF merge.
 
-    top_k=3 rather than 5: grading calls the LLM once per retrieved chunk,
-    so this directly sets how many grading calls one question makes. On
-    the free tier's per-minute quota, that's the gap between one question
-    fitting under the limit and not.
+    `collection` is now a NumpyVectorStore but the call signature is
+    identical to the previous ChromaDB version — nothing upstream changes.
     """
-    # --- Hard filter: which chunk indices survive doc_type/version filter ---
+    # --- Hard filter ---
     def version_matches(chunk):
         if version is None:
             return True
-        # Migration chunks carry a single "version" string. Reference
-        # chunks carry a "versions" list (the OpenAPI spec covers more
-        # than one API version at once). Changelog release_date isn't an
-        # API version and is intentionally not matched here.
         if "versions" in chunk:
             return version in chunk["versions"]
         return chunk.get("version") == version
@@ -175,19 +168,23 @@ def hybrid_retrieve(query, collection, bm25, chunks, embedding_function, doc_typ
 
     filtered_ids = {f"chunk_{i}" for i in filtered_indices}
 
-    # --- Dense retrieval (over full collection, then filtered to allowed ids) ---
+    # --- Dense retrieval ---
     query_embedding = embedding_function.embed_query(query)
-    dense_results = collection.query(query_embeddings=query_embedding, n_results=len(chunks))
-    dense_ranked = [doc_id for doc_id in dense_results["ids"][0] if doc_id in filtered_ids]
+    dense_ranked = [
+        doc_id for doc_id in collection.query(query_embedding, n_results=len(chunks))
+        if doc_id in filtered_ids
+    ]
 
-    # --- BM25 retrieval (over full corpus, then filtered) ---
+    # --- BM25 retrieval ---
     tokenized_query = query.lower().split()
     bm25_scores = bm25.get_scores(tokenized_query)
-    bm25_ranked_all = sorted(range(len(chunks)), key=lambda i: bm25_scores[i], reverse=True)
-    bm25_ranked = [f"chunk_{i}" for i in bm25_ranked_all if f"chunk_{i}" in filtered_ids]
+    bm25_ranked = [
+        f"chunk_{i}"
+        for i in sorted(range(len(chunks)), key=lambda i: bm25_scores[i], reverse=True)
+        if f"chunk_{i}" in filtered_ids
+    ]
 
     # --- Fuse ---
     fused_ids = reciprocal_rank_fusion([dense_ranked, bm25_ranked])[:top_k]
     fused_indices = [int(doc_id.split("_")[1]) for doc_id in fused_ids]
-
     return [chunks[i] for i in fused_indices]

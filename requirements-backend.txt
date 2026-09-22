@@ -1,9 +1,8 @@
-chromadb
+numpy
 rank_bm25
 langchain-openai
 requests
 langgraph
 fastapi>=0.141.0
 uvicorn
-streamlit
 python-dotenv

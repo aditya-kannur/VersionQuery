@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: versionquery-backend
+    runtime: python
+    buildCommand: pip install -r requirements-backend.txt
+    startCommand: uvicorn src.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false          # you'll paste the value in the Render dashboard
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o
+      - key: OPENROUTER_EMBEDDING_MODEL
+        value: openai/text-embedding-3-small
+    healthCheckPath: /health
