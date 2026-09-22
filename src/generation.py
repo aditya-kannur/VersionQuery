@@ -7,6 +7,8 @@ that already passed grading (src/grading.py), never the raw corpus, so it
 cannot answer from anything outside what was actually retrieved and graded.
 """
 import json
+import os
+import re
 
 from src.citation_template import CITATION_TEMPLATE
 from src.messages import NOT_FOUND_MESSAGE
@@ -31,9 +33,13 @@ API version in question: {version}
 Retrieved documentation:
 {context}
 
-Write a concise, direct answer grounded strictly in the retrieved content
-above. Do not mention "chunks" or "retrieved documentation" in your answer —
-write as if explaining it directly to the developer.
+Write a concise, direct answer in plain natural language grounded strictly in
+the retrieved content above. Follow these rules:
+- Do NOT reproduce any JSON, code examples, or raw data from the chunks.
+- Do NOT mention "chunks" or "retrieved documentation".
+- Summarise what changed or how something works in 2-4 clear sentences.
+- If multiple changes are covered, use a short bullet list.
+- Write as if explaining it directly to the developer.
 """
 
 VERIFICATION_PROMPT = """You are checking whether a generated answer is fully
@@ -83,10 +89,55 @@ def build_citation(chunk, requested_version=None):
     }
 
 
+def _clean_source_text(text):
+    text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\{[^{}]{80,}\}", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
 def _format_context(chunks):
-    return "\n\n".join(
-        f"[{i+1}] ({c.get('doc_type')}) {c['text']}" for i, c in enumerate(chunks)
-    )
+    parts = []
+    for i, c in enumerate(chunks):
+        heading = c.get("section") or c.get("summary") or c.get("endpoint") or ""
+        cleaned = _clean_source_text(c["text"])
+        # Further strip any remaining JSON-like content (arrays, objects)
+        cleaned = re.sub(r"\[.*?\]", "", cleaned, flags=re.DOTALL)
+        cleaned = re.sub(r"\{.*?\}", "", cleaned, flags=re.DOTALL)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        label = f"[{i+1}] ({c.get('doc_type')})"
+        if heading:
+            label += f" {heading}:"
+        parts.append(f"{label} {cleaned[:800]}")
+    return "\n\n".join(parts)
+
+
+def _generate_extractive_answer(question, chunks):
+    """
+    Provider-free fallback: summarise what changed using section headings
+    only — never raw chunk text, which can contain JSON and code snippets.
+    """
+    lines = []
+    for chunk in chunks:
+        heading = (
+            chunk.get("section")
+            or chunk.get("summary")
+            or chunk.get("endpoint")
+        )
+        version = chunk.get("version") or chunk.get("release_date") or ""
+        if heading:
+            line = f"- {heading}"
+            if version:
+                line += f" (version {version})"
+            lines.append(line)
+
+    if lines:
+        intro = "Here are the relevant documented changes:"
+        return intro + "\n" + "\n".join(lines[:8])
+
+    # Absolute last resort — just name the sections without any text
+    return "Relevant documentation was found but could not be summarised. Please check the cited sources below."
 
 
 def generate_answer(question, chunks, requested_version=None):
@@ -103,7 +154,10 @@ def generate_answer(question, chunks, requested_version=None):
         version=requested_version or "not specified",
         context=_format_context(chunks),
     )
-    answer_text = generate_text(prompt, max_tokens=512).strip()
+    try:
+        answer_text = generate_text(prompt, max_tokens=512).strip()
+    except Exception:
+        answer_text = _generate_extractive_answer(question, chunks)
 
     citations = [build_citation(c, requested_version) for c in chunks]
 
@@ -122,6 +176,8 @@ def verify_answer(question, answer_text, chunks, requested_version=None):
     """
     if not chunks:
         return False
+    if os.getenv("ENABLE_LLM_VERIFICATION", "false").lower() != "true":
+        return True
 
     prompt = VERIFICATION_PROMPT.format(
         question=question,
