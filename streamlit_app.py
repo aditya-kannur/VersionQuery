@@ -77,7 +77,7 @@ st.markdown('<div class="section-title">Start with a question</div>', unsafe_all
 st.caption("Include a version when you can. For a general question, ask for the latest version and VersionQuery will resolve it automatically.")
 
 cols = st.columns(3)
-for col, title, body in zip(cols, ["Reference lookup", "Migration path", "Latest docs"], ["How do I query a database in 2022-06-28?", "What changed from 2021-08-16 to 2022-06-28?", "What is the latest API version in the docs?"]):
+for col, title, body in zip(cols, ["Reference lookup", "Migration path", "Latest docs"], ["How do I retrieve a database in 2026-03-11?", "What changed from 2021-08-16 to 2022-06-28?", "What is the latest API version in the docs?"]):
     with col:
         st.markdown(f'<div class="card"><h3>{title}</h3><p>{body}</p></div>', unsafe_allow_html=True)
 
