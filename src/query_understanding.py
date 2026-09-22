@@ -34,8 +34,15 @@ Respond with ONLY valid JSON, no markdown fences, no explanation.
         raw_text = raw_text.strip("`").removeprefix("json").strip()
 
     try:
-        return json.loads(raw_text)
+        result = json.loads(raw_text)
     except json.JSONDecodeError:
         # Fail loud, not silent — a malformed LLM response shouldn't
         # masquerade as a valid "no version found" result.
         raise ValueError(f"Could not parse model output as JSON: {raw_text}")
+
+    if not result.get("version") and any(
+        term in user_question.lower() for term in ("latest", "newest", "most recent", "current")
+    ):
+        result["version"] = KNOWN_VERSIONS[-1]
+
+    return result

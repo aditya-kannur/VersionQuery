@@ -2,7 +2,8 @@
 Day 7: Routing logic — maps intent -> doc_type(s) + version filter,
 and handles the clarification flow when version is missing.
 """
-from src.messages import CLARIFICATION_QUESTION, NOT_FOUND_MESSAGE  # teammate's Day 7 file
+from src.constants import KNOWN_VERSIONS
+from src.messages import CLARIFICATION_QUESTION, INVALID_VERSION_MESSAGE, NOT_FOUND_MESSAGE
 
 # Maps each intent to which doc_type(s) it should search.
 # Diagnostic searches two doc types in parallel per PRD section 4.3.
@@ -37,6 +38,19 @@ def route_query(understood_query: dict) -> dict:
         if not from_version or not to_version:
             return {"status": "needs_clarification", "message": CLARIFICATION_QUESTION}
 
+        invalid_versions = [
+            version for version in (from_version, to_version)
+            if version not in KNOWN_VERSIONS
+        ]
+        if invalid_versions:
+            return {
+                "status": "not_found",
+                "message": INVALID_VERSION_MESSAGE.format(
+                    version=", ".join(invalid_versions),
+                    supported_versions=", ".join(KNOWN_VERSIONS),
+                ),
+            }
+
         return {
             "status": "ready",
             "doc_types": doc_types,
@@ -49,6 +63,15 @@ def route_query(understood_query: dict) -> dict:
     if not version:
         # Per PRD 4.2: version missing and can't be inferred -> ask, don't guess.
         return {"status": "needs_clarification", "message": CLARIFICATION_QUESTION}
+
+    if version not in KNOWN_VERSIONS:
+        return {
+            "status": "not_found",
+            "message": INVALID_VERSION_MESSAGE.format(
+                version=version,
+                supported_versions=", ".join(KNOWN_VERSIONS),
+            ),
+        }
 
     return {
         "status": "ready",
