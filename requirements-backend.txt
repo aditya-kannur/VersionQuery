@@ -1,6 +1,8 @@
 numpy
 rank_bm25
-langchain-openai
+langchain-groq
+groq
+sentence-transformers
 requests
 langgraph
 fastapi>=0.141.0

@@ -31,10 +31,12 @@ _state = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting up — loading chunks and building retrieval index...")
     chunks = load_all_chunks()
     collection = build_chroma_collection(chunks, embedding_function)
     bm25 = build_bm25_index(chunks)
     _state["app"] = build_graph(collection, bm25, chunks, embedding_function)
+    logger.info("Retrieval index ready. LLM: Groq / Embeddings: sentence-transformers")
     yield
     _state.clear()
 

@@ -1,73 +1,42 @@
+"""
+LLM + embeddings provider module.
+
+Previously backed by OpenRouter/OpenAI. Now uses:
+  - Groq (chat completions) — free tier, fast inference
+  - sentence-transformers (embeddings) — runs locally, no API key needed
+
+Public interface is unchanged: generate_text() and embedding_function.
+All other modules import from here and need no changes.
+"""
 import os
-import time
 
-import requests
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
+from sentence_transformers import SentenceTransformer
 
 
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# ---------------------------------------------------------------------------
+# Groq chat model
+# ---------------------------------------------------------------------------
 
-# Module-level cache — built once on first use, reused for every subsequent
-# generate_text call. Avoids creating a new ChatOpenAI object (which
-# validates credentials and builds an HTTP client) on every LLM call.
-_chat_model_cache: ChatOpenAI | None = None
+_chat_model_cache: ChatGroq | None = None
 
 
 def _api_key() -> str:
-    key = os.environ.get("OPENROUTER_API_KEY")
+    key = os.environ.get("GROQ_API_KEY")
     if not key:
-        raise RuntimeError("OPENROUTER_API_KEY environment variable is not set")
+        raise RuntimeError("GROQ_API_KEY environment variable is not set")
     return key
 
 
-def _get_chat_model() -> ChatOpenAI:
-    """Returns a cached ChatOpenAI instance, creating it on first call."""
+def _get_chat_model() -> ChatGroq:
+    """Returns a cached ChatGroq instance, created on first call."""
     global _chat_model_cache
     if _chat_model_cache is None:
-        _chat_model_cache = ChatOpenAI(
-            model=os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
+        _chat_model_cache = ChatGroq(
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
             api_key=_api_key(),
-            base_url=OPENROUTER_BASE_URL,
         )
     return _chat_model_cache
-
-
-class OpenRouterEmbeddings:
-    def __init__(self):
-        self.model = os.getenv(
-            "OPENROUTER_EMBEDDING_MODEL", "openai/text-embedding-3-small"
-        )
-        self.url = f"{OPENROUTER_BASE_URL}/embeddings"
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        # Retry up to 5 times with exponential backoff on 429 rate-limit
-        # responses. The index build at startup embeds all chunks in batches
-        # and a single transient 429 should never abort the whole startup.
-        for attempt in range(5):
-            response = requests.post(
-                self.url,
-                headers={"Authorization": f"Bearer {_api_key()}"},
-                json={"model": self.model, "input": texts},
-                timeout=120,
-            )
-            if response.status_code == 429:
-                wait = 2 ** attempt
-                time.sleep(wait)
-                continue
-            response.raise_for_status()
-            data = response.json()["data"]
-            return [
-                item["embedding"]
-                for item in sorted(data, key=lambda item: item["index"])
-            ]
-        # All retries exhausted — raise the last 429 as a real error.
-        response.raise_for_status()
-
-    def embed_query(self, text: str) -> list[float]:
-        return self.embed_documents([text])[0]
-
-
-embedding_function = OpenRouterEmbeddings()
 
 
 def generate_text(prompt: str, max_tokens: int = 256) -> str:
@@ -79,3 +48,40 @@ def generate_text(prompt: str, max_tokens: int = 256) -> str:
             for part in content
         )
     return str(content)
+
+
+# ---------------------------------------------------------------------------
+# Sentence-transformers embeddings (runs in-process, no API key needed)
+# ---------------------------------------------------------------------------
+
+_embedding_model_cache: SentenceTransformer | None = None
+
+
+def _get_embedding_model() -> SentenceTransformer:
+    """Returns a cached SentenceTransformer instance, loaded on first call."""
+    global _embedding_model_cache
+    if _embedding_model_cache is None:
+        model_name = os.getenv(
+            "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
+        )
+        _embedding_model_cache = SentenceTransformer(model_name)
+    return _embedding_model_cache
+
+
+class LocalEmbeddings:
+    """
+    Drop-in replacement for the old OpenRouterEmbeddings class.
+    Same embed_documents / embed_query interface, backed by
+    sentence-transformers running locally — no network call, no API key.
+    """
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        model = _get_embedding_model()
+        vectors = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
+        return vectors.tolist()
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed_documents([text])[0]
+
+
+embedding_function = LocalEmbeddings()
