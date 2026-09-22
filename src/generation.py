@@ -103,7 +103,7 @@ def generate_answer(question, chunks, requested_version=None):
         version=requested_version or "not specified",
         context=_format_context(chunks),
     )
-    answer_text = generate_text(prompt).strip()
+    answer_text = generate_text(prompt, max_tokens=512).strip()
 
     citations = [build_citation(c, requested_version) for c in chunks]
 

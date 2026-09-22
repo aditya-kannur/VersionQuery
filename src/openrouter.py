@@ -15,7 +15,6 @@ chat_model = ChatOpenAI(
     model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o"),
     api_key=_api_key(),
     base_url=OPENROUTER_BASE_URL,
-    max_tokens=2048,
 )
 
 class OpenRouterEmbeddings:
@@ -43,8 +42,8 @@ class OpenRouterEmbeddings:
 embedding_function = OpenRouterEmbeddings()
 
 
-def generate_text(prompt: str) -> str:
-    response = chat_model.invoke(prompt)
+def generate_text(prompt: str, max_tokens: int = 256) -> str:
+    response = chat_model.bind(max_tokens=max_tokens).invoke(prompt)
     content = response.content
     if isinstance(content, list):
         return "".join(

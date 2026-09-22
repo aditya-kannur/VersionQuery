@@ -12,7 +12,11 @@ import os
 import requests
 import streamlit as st
 
-from src.messages import CLARIFICATION_QUESTION, NOT_FOUND_MESSAGE
+from src.messages import (
+    CLARIFICATION_QUESTION,
+    NOT_FOUND_MESSAGE,
+    SERVICE_UNAVAILABLE_MESSAGE,
+)
 
 API_URL = os.environ.get("VERSIONQUERY_API_URL", "http://localhost:8000")
 
@@ -55,6 +59,8 @@ def render_answer(answer: str, citations: list):
     """
     if answer == CLARIFICATION_QUESTION:
         st.info(answer)
+    elif answer == SERVICE_UNAVAILABLE_MESSAGE:
+        st.error(answer)
     elif answer == NOT_FOUND_MESSAGE or answer.startswith("I couldn't find API version"):
         st.warning(answer)
     else:
@@ -114,9 +120,8 @@ for turn in st.session_state.history:
     with st.chat_message("assistant"):
         render_answer(turn["answer"], turn.get("citations", []))
 
-question = st.session_state.pop("pending_question", None)
-if question is None:
-    question = st.chat_input("Ask about a version, migration, or the latest API docs…")
+typed_question = st.chat_input("Ask about a version, migration, or the latest API docs…")
+question = st.session_state.pop("pending_question", None) or typed_question
 
 if question:
     st.session_state.history.append({"question": question, "answer": None, "citations": []})
