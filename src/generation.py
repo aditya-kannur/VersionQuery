@@ -131,7 +131,7 @@ def verify_answer(question, answer_text, chunks, requested_version=None):
     )
 
     try:
-        raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
+        raw = generate_text(prompt, max_tokens=64).strip().strip("`").removeprefix("json").strip()
         result = json.loads(raw)
     except Exception:
         # Verification call failed (rate-limit, network blip, bad JSON) —

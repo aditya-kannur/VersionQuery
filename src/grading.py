@@ -48,7 +48,7 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
         chunk_text=chunk["text"],
     )
 
-    raw = generate_text(prompt).strip().strip("`").removeprefix("json").strip()
+    raw = generate_text(prompt, max_tokens=64).strip().strip("`").removeprefix("json").strip()
 
     try:
         result = json.loads(raw)

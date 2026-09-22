@@ -25,7 +25,7 @@ def _get_chat_model() -> ChatOpenAI:
     global _chat_model_cache
     if _chat_model_cache is None:
         _chat_model_cache = ChatOpenAI(
-            model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o"),
+            model=os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
             api_key=_api_key(),
             base_url=OPENROUTER_BASE_URL,
         )
