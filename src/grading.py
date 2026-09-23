@@ -4,6 +4,8 @@ retrieved chunk for relevance, version correctness, and doc-type fit.
 Failed grading triggers a query-rewrite retry, capped per config.
 """
 import json
+import os
+import re
 import time
 
 from src.grading_config import MAX_RETRIES, RELEVANCE_THRESHOLD  # teammate's Day 8 file
@@ -15,7 +17,7 @@ from src.openrouter import generate_text
 # burst all 3 calls at once and immediately saturate the free-tier
 # per-minute quota. 1 second is enough to spread them out without
 # noticeably slowing down a single request.
-_INTER_CHUNK_SLEEP = 1.0
+_INTER_CHUNK_SLEEP = float(os.getenv("LLM_GRADING_SLEEP_SECONDS", "0"))
 
 GRADING_PROMPT = """You are grading whether a retrieved document chunk actually
 answers a developer's question.
@@ -40,6 +42,9 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
     """
     Grades a single chunk. Returns True only if it passes all 3 dimensions.
     """
+    if os.getenv("ENABLE_LLM_GRADING", "false").lower() != "true":
+        return _grade_chunk_locally(question, expected_version, expected_doc_type, chunk)
+
     prompt = GRADING_PROMPT.format(
         question=question,
         expected_version=expected_version,
@@ -48,7 +53,10 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
         chunk_text=chunk["text"],
     )
 
-    raw = generate_text(prompt, max_tokens=64).strip().strip("`").removeprefix("json").strip()
+    try:
+        raw = generate_text(prompt, max_tokens=64).strip().strip("`").removeprefix("json").strip()
+    except Exception:
+        return _grade_chunk_locally(question, expected_version, expected_doc_type, chunk)
 
     try:
         result = json.loads(raw)
@@ -58,6 +66,52 @@ def grade_chunk(question, expected_version, expected_doc_type, chunk):
         return False
 
     return result.get("relevant") and result.get("version_correct") and result.get("doc_type_correct")
+
+
+def _grade_chunk_locally(question, expected_version, expected_doc_type, chunk):
+    """Lexical fallback used when no LLM provider is configured."""
+    if chunk.get("doc_type") != expected_doc_type:
+        return False
+
+    if expected_version is not None:
+        if "versions" in chunk:
+            if expected_version not in chunk["versions"]:
+                return False
+        elif chunk.get("version") != expected_version:
+            return False
+
+    stopwords = {
+        "the", "a", "an", "and", "or", "to", "do", "i", "in", "for", "of",
+        "is", "my", "how", "what", "why", "does", "did", "api", "version",
+        "notion", "from", "changed", "changes", "change", "moving", "move",
+        "migrate", "migration", "upgrade", "upgrading", "need", "make",
+    }
+    question_terms = {
+        term for term in re.findall(r"[a-z0-9_]+", question.lower())
+        if (
+            len(term) > 2
+            and term not in stopwords
+            and not re.fullmatch(r"\d+", term)
+            and not re.fullmatch(r"20\d{2}", term)
+        )
+    }
+    expanded_terms = set()
+    for term in question_terms:
+        expanded_terms.add(term)
+        if term.endswith("ies") and len(term) > 4:
+            expanded_terms.add(term[:-3] + "y")
+        if term.endswith("s") and len(term) > 3:
+            expanded_terms.add(term[:-1])
+    question_terms = expanded_terms
+    if not question_terms:
+        return True
+
+    searchable = " ".join(
+        str(chunk.get(field, ""))
+        for field in ("text", "summary", "endpoint", "section")
+    ).lower()
+    matches = sum(1 for term in question_terms if term in searchable)
+    return matches >= max(1, min(2, len(question_terms)))
 
 
 def grade_chunks(question, expected_version, expected_doc_type, chunks):
@@ -82,7 +136,10 @@ for a document search, without changing its meaning or intent:
 "{original_question}"
 
 Respond with ONLY the rewritten question, nothing else."""
-    return generate_text(prompt).strip()
+    try:
+        return generate_text(prompt, max_tokens=96).strip()
+    except Exception:
+        return original_question
 
 
 def retrieve_and_grade(question, expected_version, expected_doc_type, retrieve_fn):

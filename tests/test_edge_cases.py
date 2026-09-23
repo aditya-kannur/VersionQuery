@@ -1,8 +1,8 @@
 """
 Day 15 — edge-case tests for the pure (non-LLM) logic in the pipeline.
 Deliberately excludes query_understanding.py / grading.py / generation.py,
-which all call Gemini and need GEMINI_API_KEY — those are exercised live
-by src/evaluate.py instead.
+which call the configured LLM provider and need GROQ_API_KEY - those are
+exercised live by src/evaluate.py instead.
 """
 from src.router import route_query
 from src.migration_decomposition import get_hop_sequence

@@ -9,7 +9,7 @@ NOT_FOUND_MESSAGE = "Not found in docs for this version."
 
 SERVICE_UNAVAILABLE_MESSAGE = (
     "The AI provider could not complete this request. Please try again shortly "
-    "or check the configured OpenRouter credits."
+    "or check the configured Groq API key/model."
 )
 
 INVALID_VERSION_MESSAGE = (

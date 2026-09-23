@@ -2,23 +2,24 @@
 LLM + embeddings provider module.
 
 Previously backed by OpenRouter/OpenAI. Now uses:
-  - Groq (chat completions) — free tier, fast inference
+  - Groq (chat completions) - free tier, fast inference
   - sentence-transformers (embeddings) — runs locally, no API key needed
 
 Public interface is unchanged: generate_text() and embedding_function.
 All other modules import from here and need no changes.
 """
 import os
-
-from langchain_groq import ChatGroq
-from sentence_transformers import SentenceTransformer
+from typing import Any
 
 
 # ---------------------------------------------------------------------------
-# Groq chat model
+# Groq chat models
 # ---------------------------------------------------------------------------
 
-_chat_model_cache: ChatGroq | None = None
+DEFAULT_GROQ_MODELS = ("llama-3.1-8b-instant", "llama-3.3-70b-versatile")
+DEFAULT_MAX_TOKENS = 384
+
+_chat_model_cache: dict[str, Any] = {}
 
 
 def _api_key() -> str:
@@ -28,19 +29,69 @@ def _api_key() -> str:
     return key
 
 
-def _get_chat_model() -> ChatGroq:
-    """Returns a cached ChatGroq instance, created on first call."""
-    global _chat_model_cache
-    if _chat_model_cache is None:
-        _chat_model_cache = ChatGroq(
-            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+def _configured_models() -> list[str]:
+    """
+    Returns Groq model IDs to try in order.
+
+    GROQ_MODEL can force a preferred model, and GROQ_FALLBACK_MODELS can add
+    comma-separated backups. We keep a fast, broadly accessible 8B model first
+    by default because the old 70B default can be unavailable on some accounts.
+    """
+    configured = []
+    preferred = os.getenv("GROQ_MODEL")
+    if preferred:
+        configured.append(preferred)
+
+    fallback_env = os.getenv("GROQ_FALLBACK_MODELS")
+    if fallback_env:
+        configured.extend(model.strip() for model in fallback_env.split(","))
+    elif not configured:
+        configured.extend(DEFAULT_GROQ_MODELS)
+    else:
+        configured.extend(DEFAULT_GROQ_MODELS)
+
+    models = []
+    for model in configured:
+        if model and model not in models:
+            models.append(model)
+    return models
+
+
+def _get_chat_model(model_name: str) -> Any:
+    """Returns a cached ChatGroq instance for model_name."""
+    if model_name not in _chat_model_cache:
+        from langchain_groq import ChatGroq
+
+        _chat_model_cache[model_name] = ChatGroq(
+            model=model_name,
             api_key=_api_key(),
+            timeout=30,
+            max_retries=1,
         )
-    return _chat_model_cache
+    return _chat_model_cache[model_name]
+
+
+def _token_budget(requested_max_tokens: int) -> int:
+    configured_limit = int(os.getenv("LLM_MAX_TOKENS", str(DEFAULT_MAX_TOKENS)))
+    return max(1, min(requested_max_tokens, configured_limit))
 
 
 def generate_text(prompt: str, max_tokens: int = 256) -> str:
-    response = _get_chat_model().bind(max_tokens=max_tokens).invoke(prompt)
+    last_error: Exception | None = None
+    for model_name in _configured_models():
+        try:
+            response = (
+                _get_chat_model(model_name)
+                .bind(max_tokens=_token_budget(max_tokens))
+                .invoke(prompt)
+            )
+            break
+        except Exception as exc:
+            last_error = exc
+    else:
+        tried = ", ".join(_configured_models())
+        raise RuntimeError(f"Groq request failed for configured models: {tried}") from last_error
+
     content = response.content
     if isinstance(content, list):
         return "".join(
@@ -54,13 +105,15 @@ def generate_text(prompt: str, max_tokens: int = 256) -> str:
 # Sentence-transformers embeddings (runs in-process, no API key needed)
 # ---------------------------------------------------------------------------
 
-_embedding_model_cache: SentenceTransformer | None = None
+_embedding_model_cache: Any | None = None
 
 
-def _get_embedding_model() -> SentenceTransformer:
+def _get_embedding_model() -> Any:
     """Returns a cached SentenceTransformer instance, loaded on first call."""
     global _embedding_model_cache
     if _embedding_model_cache is None:
+        from sentence_transformers import SentenceTransformer
+
         model_name = os.getenv(
             "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
         )
@@ -72,7 +125,7 @@ class LocalEmbeddings:
     """
     Drop-in replacement for the old OpenRouterEmbeddings class.
     Same embed_documents / embed_query interface, backed by
-    sentence-transformers running locally — no network call, no API key.
+    sentence-transformers running locally - no API key for inference.
     """
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

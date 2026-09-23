@@ -6,6 +6,23 @@ grades the migration chunk for each hop separately.
 from src.constants import KNOWN_VERSIONS
 
 
+def _has_topic_terms(question):
+    if not question:
+        return False
+
+    stopwords = {
+        "what", "changed", "changes", "change", "from", "to", "move",
+        "moving", "migrate", "migration", "upgrade", "upgrading", "for",
+        "my", "the", "a", "an", "api", "version", "notion", "need",
+        "make", "i", "do", "does", "did",
+    }
+    terms = [
+        term for term in question.lower().replace("-", " ").split()
+        if len(term) > 2 and term not in stopwords and not term.isdigit()
+    ]
+    return bool(terms)
+
+
 def get_hop_sequence(from_version, to_version):
     """
     Returns the ordered list of intermediate hops between from_version and
@@ -47,23 +64,28 @@ def decompose_and_retrieve(from_version, to_version, retrieve_and_grade_fn, orig
         return {"status": "not_found"}
 
     hop_results = []
+    use_topic_question = _has_topic_terms(original_question)
     for version_a, version_b in hops:
         # Use the user's question when available so grading can judge
         # relevance correctly; fall back to the generic stub otherwise.
         hop_stub = f"What changed migrating from {version_a} to {version_b}?"
-        question = original_question or hop_stub
+        question = original_question if use_topic_question else hop_stub
 
         result = retrieve_and_grade_fn(question, expected_version=version_b)
 
         if result["status"] != "found":
-            # One hop failing grounds the whole migration answer as
-            # incomplete/untrustworthy — don't silently skip a hop.
-            return {"status": "not_found", "failed_hop": (version_a, version_b)}
+            # A hop may have no relevant changes for a topic-specific
+            # question. Keep collecting other grounded hops and only return
+            # not_found if the whole requested range has no evidence.
+            continue
 
         hop_results.append({
             "from": version_a,
             "to": version_b,
             "chunks": result["chunks"],
         })
+
+    if not hop_results:
+        return {"status": "not_found"}
 
     return {"status": "found", "hops": hop_results}
