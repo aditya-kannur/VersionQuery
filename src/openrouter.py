@@ -16,7 +16,7 @@ from typing import Any
 # Groq chat models
 # ---------------------------------------------------------------------------
 
-DEFAULT_GROQ_MODELS = ("llama-3.1-8b-instant", "llama-3.3-70b-versatile")
+DEFAULT_GROQ_MODELS = ("llama-3.3-70b-versatile", "llama-3.1-8b-instant")
 DEFAULT_MAX_TOKENS = 384
 
 _chat_model_cache: dict[str, Any] = {}
@@ -34,8 +34,12 @@ def _configured_models() -> list[str]:
     Returns Groq model IDs to try in order.
 
     GROQ_MODEL can force a preferred model, and GROQ_FALLBACK_MODELS can add
-    comma-separated backups. We keep a fast, broadly accessible 8B model first
-    by default because the old 70B default can be unavailable on some accounts.
+    comma-separated backups. 70B goes first: generation quality (obeying
+    "ground strictly in this text, never reproduce JSON") matters more than
+    speed, and the 8B model was observed leaking memorized real-world JSON
+    examples from its own pretraining on well-known public API docs, even
+    when that JSON was never in the retrieved context. 8B stays as a
+    same-request fallback for accounts where 70B access is unavailable.
     """
     configured = []
     preferred = os.getenv("GROQ_MODEL")
