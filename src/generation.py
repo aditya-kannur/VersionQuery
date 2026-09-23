@@ -39,8 +39,8 @@ the retrieved content above. Follow these rules:
   own knowledge of this API. Describe field/behavior changes in prose only,
   e.g. "the `type` and `property` fields were removed from the response"
   rather than showing the response body itself.
-- Your answer must not contain the characters { } [ ] or three backticks,
-  anywhere, under any circumstance.
+- Your answer must not contain curly braces, square brackets, or three
+  backticks, anywhere, under any circumstance.
 - Do NOT mention "chunks" or "retrieved documentation".
 - Summarise what changed or how something works in 2-4 clear sentences.
 - If multiple changes are covered, use a short bullet list.
