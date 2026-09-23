@@ -35,7 +35,12 @@ Retrieved documentation:
 
 Write a concise, direct answer in plain natural language grounded strictly in
 the retrieved content above. Follow these rules:
-- Do NOT reproduce any JSON, code examples, or raw data from the chunks.
+- Do NOT reproduce any JSON, code examples, or raw data — not even from your
+  own knowledge of this API. Describe field/behavior changes in prose only,
+  e.g. "the `type` and `property` fields were removed from the response"
+  rather than showing the response body itself.
+- Your answer must not contain the characters { } [ ] or three backticks,
+  anywhere, under any circumstance.
 - Do NOT mention "chunks" or "retrieved documentation".
 - Summarise what changed or how something works in 2-4 clear sentences.
 - If multiple changes are covered, use a short bullet list.
@@ -140,6 +145,36 @@ def _generate_extractive_answer(question, chunks):
     return "Relevant documentation was found but could not be summarised. Please check the cited sources below."
 
 
+def _sanitize_answer_text(text, question, chunks):
+    """
+    Defense-in-depth: even with strict prompting, a model can still leak
+    JSON it knows from its own pretraining (observed with llama-3.1-8b on
+    well-known public API docs) rather than something present in the
+    retrieved context. Strip anything JSON/code-shaped from the model's
+    output before it's ever shown, regardless of which model produced it.
+    Falls back to the heading-only extractive answer if sanitizing leaves
+    too little readable text behind.
+    """
+    cleaned = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+    cleaned = re.sub(r"`[^`]*`", " ", cleaned)
+    # Strip any bracket/brace span, however deep — walk outward until no
+    # more top-level [...] or {...} spans remain, since a single non-greedy
+    # pass can leave dangling fragments on nested/unbalanced JSON.
+    for _ in range(6):
+        new_cleaned = re.sub(r"\{[^{}]*\}", " ", cleaned)
+        new_cleaned = re.sub(r"\[[^\[\]]*\]", " ", new_cleaned)
+        if new_cleaned == cleaned:
+            break
+        cleaned = new_cleaned
+    # Any surviving stray bracket/brace means unbalanced JSON slipped
+    # through — treat the whole answer as unsafe rather than show a
+    # half-cleaned fragment.
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if any(ch in cleaned for ch in "{}[]") or len(cleaned) < 20:
+        return _generate_extractive_answer(question, chunks)
+    return cleaned
+
+
 def generate_answer(question, chunks, requested_version=None):
     """
     Generates an answer strictly from the given (already-graded) chunks,
@@ -156,6 +191,7 @@ def generate_answer(question, chunks, requested_version=None):
     )
     try:
         answer_text = generate_text(prompt, max_tokens=512).strip()
+        answer_text = _sanitize_answer_text(answer_text, question, chunks)
     except Exception:
         answer_text = _generate_extractive_answer(question, chunks)
 
